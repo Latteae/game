@@ -27,10 +27,10 @@ app.post('/api/update-profile', (req, res) => {
     connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], () => res.json({success: true}));
 });
 
-// --- Note System with Like & Filter ---
+// --- Note System with Title, Like & Filter ---
 app.get('/api/notes', (req, res) => {
     const { type, userId, sort } = req.query;
-    let orderBy = "n.created_at DESC"; // Default: Latest
+    let orderBy = "n.created_at DESC";
     
     if (sort === "oldest") orderBy = "n.created_at ASC";
     else if (sort === "likes") orderBy = "n.likes DESC";
@@ -49,14 +49,14 @@ app.get('/api/notes', (req, res) => {
     connection.query(sql, (err, result) => res.json(result));
 });
 
+app.post('/api/notes/add', (req, res) => {
+    const { userId, title, content } = req.body;
+    connection.query("INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)", [userId, title, content], () => res.json({ success: true }));
+});
+
 app.post('/api/notes/like', (req, res) => {
     const { noteId } = req.body;
     connection.query("UPDATE notes SET likes = likes + 1 WHERE id = ?", [noteId], () => res.json({ success: true }));
-});
-
-app.post('/api/notes/add', (req, res) => {
-    const { userId, content } = req.body;
-    connection.query("INSERT INTO notes (user_id, content) VALUES (?, ?)", [userId, content], () => res.json({ success: true }));
 });
 
 app.post('/api/notes/delete', (req, res) => {
@@ -64,11 +64,10 @@ app.post('/api/notes/delete', (req, res) => {
     connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
 });
 
-// --- Leaderboard System with Filters ---
+// --- Leaderboard & Stats ---
 app.get('/api/leaderboard', (req, res) => {
     const { filter } = req.query;
-    let orderBy = "(IFNULL(s.level,1) * 10 + IFNULL(s.total_notes,0) * 5 + IFNULL(sum_likes.total,0)) DESC"; // Overall
-
+    let orderBy = "(IFNULL(s.level,1) * 10 + IFNULL(s.total_notes,0) * 5 + IFNULL(sum_likes.total,0)) DESC";
     if (filter === "notes") orderBy = "s.total_notes DESC";
     else if (filter === "likes") orderBy = "IFNULL(sum_likes.total,0) DESC";
     else if (filter === "level") orderBy = "s.level DESC";
@@ -82,7 +81,6 @@ app.get('/api/leaderboard', (req, res) => {
         LEFT JOIN game_stats s ON u.id = s.user_id
         LEFT JOIN (SELECT user_id, SUM(likes) as total FROM notes GROUP BY user_id) sum_likes ON u.id = sum_likes.user_id
         ORDER BY ${orderBy} LIMIT 50`;
-    
     connection.query(sql, (err, result) => res.json(result));
 });
 
@@ -96,4 +94,4 @@ app.get('/api/load/:userId', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Server started on ${PORT}`));

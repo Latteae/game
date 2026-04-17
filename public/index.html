@@ -8,40 +8,37 @@
         body.dark-mode { --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        /* Leaderboard */
         #leaderboard { width: 320px; background: var(--box); border-right: 1px solid var(--border); padding: 15px; overflow-y: auto; display: none; }
         .lb-item { border-bottom: 1px solid var(--border); padding: 10px 0; font-size: 13px; }
         .lb-meta { font-size: 10px; color: #888; }
 
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
-        
         .nav { width: 100%; height: var(--nav-h); background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
         .tab-btn { background: none; border: none; padding: 0 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 4px solid transparent; height: 100%; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
-        /* Sidebar - ชนขอบบนสนิท */
         .sidebar { position: fixed; right: -350px; top: var(--nav-h); width: 300px; height: calc(100% - var(--nav-h)); background: var(--box); transition: 0.3s; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 90; border-top: 1px solid var(--border); overflow-y: auto; }
         .sidebar.active { right: 0; }
         
-        /* Note Cards */
         #notes-container { width: 90%; max-width: 800px; margin-top: 15px; overflow-y: auto; flex-grow: 1; }
         .note-card { background: var(--box); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); position: relative; }
-        .note-content { white-space: pre-wrap; max-height: 100px; overflow: hidden; font-size: 14px; }
+        .note-title { font-weight: bold; font-size: 16px; color: var(--text); margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
+        .note-content { white-space: pre-wrap; max-height: 100px; overflow: hidden; font-size: 14px; color: var(--text); opacity: 0.9; }
         .note-content.expanded { max-height: none; }
-        .note-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
         
+        .note-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
         .like-btn { cursor: pointer; color: #ff4757; font-weight: bold; padding: 5px 10px; border-radius: 5px; background: rgba(255, 71, 87, 0.1); }
-        .filter-select { background: var(--box); color: var(--text); border: 1px solid var(--border); padding: 5px; border-radius: 5px; margin-bottom: 10px; width: 200px; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
-        .box { background: var(--box); padding: 25px; border-radius: 12px; text-align: center; width: 350px; }
+        .box { background: var(--box); padding: 25px; border-radius: 12px; text-align: center; width: 400px; }
+        input, select, textarea { width: 92%; padding: 10px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-family: inherit; }
     </style>
 </head>
 <body>
 
     <div id="leaderboard">
         <h3 style="color: var(--accent)">🏆 Leaderboard</h3>
-        <select id="lb-filter" class="filter-select" onchange="fetchLB()" style="width: 100%;">
+        <select id="lb-filter" class="filter-select" onchange="fetchLB()" style="width: 100%; padding: 5px; margin-bottom: 10px;">
             <option value="overall">อันดับโดยรวม</option>
             <option value="level">เน้น Level</option>
             <option value="notes">เน้น จำนวน Note</option>
@@ -55,8 +52,8 @@
             <button id="tab-global" class="tab-btn active" onclick="setTab('global')">Notes</button>
             <button id="tab-user" class="tab-btn" onclick="setTab('user')">Your Notes</button>
             <div style="position: absolute; right: 20px; display: flex; align-items: center;">
-                <button onclick="toggleTheme()" style="background:#f39c12; margin-right: 5px;">🌓</button>
-                <button onclick="openModal('note-modal')" style="background:#2980b9; margin-right: 15px;">📝 เขียนโน๊ต</button>
+                <button onclick="toggleTheme()" style="background:#f39c12; margin-right: 5px; border:none; color:white; padding:8px; border-radius:5px; cursor:pointer;">🌓</button>
+                <button onclick="openModal('note-modal')" style="background:#2980b9; margin-right: 15px; border:none; color:white; padding:8px 15px; border-radius:5px; cursor:pointer;">📝 เขียนโน๊ต</button>
                 <div style="font-size: 24px; cursor: pointer;" onclick="toggleSide()">☰</div>
             </div>
         </div>
@@ -64,9 +61,9 @@
         <div id="auth-section">
             <div id="login-box" class="box" style="margin-top: 100px;">
                 <h2>Record of taking Notes</h2>
-                <input type="text" id="user-in" placeholder="Username" style="width:90%; padding:10px; margin:5px;">
-                <input type="password" id="pass-in" placeholder="Password" style="width:90%; padding:10px; margin:5px;">
-                <button onclick="handleAuth()" style="width:95%; margin-top:10px;">Sign In</button>
+                <input type="text" id="user-in" placeholder="Username">
+                <input type="password" id="pass-in" placeholder="Password">
+                <button onclick="handleAuth()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Sign In</button>
             </div>
         </div>
 
@@ -75,11 +72,11 @@
                 Lv. <span id="lvl-txt">1</span> | EXP: <span id="exp-txt">0</span> / <span id="cap-txt">50</span> | 📝 <span id="note-txt">0</span>
             </div>
             
-            <select id="note-sort" class="filter-select" onchange="fetchNotes()" style="margin-top: 10px;">
+            <select id="note-sort" onchange="fetchNotes()" style="margin-top: 10px; width: 200px; padding: 5px; border-radius: 5px; background: var(--box); color: var(--text);">
                 <option value="latest">ล่าสุด</option>
                 <option value="oldest">เก่าสุด</option>
                 <option value="likes">ไลค์เยอะสุด</option>
-                <option id="sort-lv-opt" value="level">เลเวลเยอะสุด</option>
+                <option id="sort-lv-opt" value="level">เลเวลผู้เขียนเยอะสุด</option>
                 <option value="random">สุ่ม</option>
             </select>
 
@@ -94,19 +91,22 @@
             </label>
         </div>
         <h4>Edit Profile</h4>
-        <input type="text" id="edit-user" placeholder="Name" style="width:90%; padding:8px; margin-bottom:10px;">
-        <input type="password" id="edit-pass" placeholder="Password" style="width:90%; padding:8px; margin-bottom:10px;">
-        <select id="edit-country" style="width:96%; padding:8px; margin-bottom:15px;"></select>
-        <button onclick="updateProfile()" style="width:100%; margin-bottom:10px;">Save Changes</button>
-        <button onclick="logout()" style="background:var(--danger); width:100%">Log Out</button>
+        <input type="text" id="edit-user" placeholder="Name">
+        <input type="password" id="edit-pass" placeholder="Password">
+        <select id="edit-country"></select>
+        <button onclick="updateProfile()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; margin-top:10px;">Save Changes</button>
+        <button onclick="logout()" style="background:var(--danger); width:100%; margin-top:10px; border:none; color:white; padding:10px; border-radius:8px; cursor:pointer;">Log Out</button>
     </div>
 
     <div id="note-modal" class="modal">
         <div class="box" style="width: 500px;">
-            <h3>New Note</h3>
-            <textarea id="note-input" rows="8" style="width:90%; padding:10px;"></textarea><br>
-            <button onclick="submitNote()">บันทึก</button>
-            <button onclick="closeModal('note-modal')" style="background:var(--danger)">ปิด</button>
+            <h3 style="margin-bottom: 15px;">New Note</h3>
+            <input type="text" id="note-title-input" placeholder="ใส่หัวข้อ (ถ้ามี)..." style="font-weight: bold;">
+            <textarea id="note-input" rows="8" placeholder="พิมพ์เนื้อหา... (1 ตัวอักษร = 1 EXP)"></textarea><br>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                <button onclick="submitNote()" style="background:var(--accent); color:white; border:none; padding:10px 25px; border-radius:8px; cursor:pointer;">บันทึก</button>
+                <button onclick="closeModal('note-modal')" style="background:var(--danger); color:white; border:none; padding:10px 25px; border-radius:8px; cursor:pointer;">ปิด</button>
+            </div>
         </div>
     </div>
 
@@ -129,7 +129,7 @@
             const p = document.getElementById('pass-in').value;
             const res = await fetch('/api/signin', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
             if (res.ok) { userId = (await res.json()).userId; localStorage.setItem('userId', userId); loadGame(); }
-            else alert("Fail");
+            else alert("Username หรือ Password ไม่ถูกต้อง");
         }
 
         async function loadGame() {
@@ -155,7 +155,8 @@
             const data = await res.json();
             document.getElementById('notes-container').innerHTML = data.map(n => `
                 <div class="note-card">
-                    <div style="font-weight:bold; color:var(--accent); margin-bottom:5px;">@${n.username} (Lv.${n.level})</div>
+                    <div style="font-size:11px; color:var(--accent); font-weight:bold;">@${n.username} (Lv.${n.level})</div>
+                    ${n.title ? `<div class="note-title">${n.title}</div>` : ''}
                     <div class="note-content" id="nc-${n.id}">${n.content}</div>
                     <div class="note-footer">
                         <span class="like-btn" onclick="likeNote(${n.id})">❤️ ${n.likes}</span>
@@ -164,45 +165,34 @@
                 </div>`).join('');
         }
 
-        async function likeNote(id) {
-            await fetch('/api/notes/like', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id}) });
-            fetchNotes();
+        async function submitNote() {
+            const title = document.getElementById('note-title-input').value.trim();
+            const content = document.getElementById('note-input').value.trim();
+            if(!content) return alert("กรุณาพิมพ์เนื้อหาโน๊ต");
+            
+            await fetch('/api/notes/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, title, content}) });
+            totalNotes++;
+            await fetch('/api/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, level, exp, totalNotes}) });
+            
+            document.getElementById('note-title-input').value = "";
+            document.getElementById('note-input').value = "";
+            closeModal('note-modal'); fetchNotes(); updateUI();
         }
 
+        async function likeNote(id) { await fetch('/api/notes/like', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id}) }); fetchNotes(); }
+        async function deleteNote(id) { if(confirm("ลบโน๊ตนี้?")) { await fetch('/api/notes/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) }); fetchNotes(); } }
         async function fetchLB() {
-            const filter = document.getElementById('lb-filter').value;
-            const res = await fetch(`/api/leaderboard?filter=${filter}`);
+            const f = document.getElementById('lb-filter').value;
+            const res = await fetch(`/api/leaderboard?filter=${f}`);
             const data = await res.json();
             document.getElementById('rank-list').innerHTML = data.map((r, i) => `
                 <div class="lb-item">
                     <b>#${i+1} ${r.username}</b> <span style="float:right">Lv.${r.level}</span><br>
-                    <div class="lb-meta">
-                        ${r.country} | 📝 ${r.notes} | ❤️ ${r.total_likes}<br>
-                        Joined: ${new Date(r.created_at).toLocaleDateString()}
-                    </div>
+                    <div class="lb-meta">${r.country} | 📝 ${r.notes} | ❤️ ${r.total_likes}<br>Joined: ${new Date(r.created_at).toLocaleDateString()}</div>
                 </div>`).join('');
         }
-
-        function setTab(t) {
-            currentTab = t;
-            document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('sort-lv-opt').style.display = t === 'user' ? 'none' : 'block';
-            fetchNotes();
-        }
-
-        async function submitNote() {
-            const content = document.getElementById('note-input').value.trim();
-            if(!content) return;
-            await fetch('/api/notes/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, content}) });
-            totalNotes++;
-            await fetch('/api/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, level, exp, totalNotes}) });
-            closeModal('note-modal'); fetchNotes(); updateUI();
-        }
-
-        async function deleteNote(id) { if(confirm("ลบโน๊ตนี้?")) { await fetch('/api/notes/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) }); fetchNotes(); } }
-        async function loadEditInfo() { const res = await fetch(`/api/user-info/${userId}`); const d = await res.json(); document.getElementById('edit-user').value = d.username; document.getElementById('edit-pass').value = d.password; document.getElementById('edit-country').value = d.country; }
-        async function updateProfile() { await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); alert("Updated!"); }
+        function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
+        async function updateProfile() { await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); alert("อัปเดตเรียบร้อย!"); }
         function logout() { localStorage.removeItem('userId'); location.reload(); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
