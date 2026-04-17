@@ -51,17 +51,14 @@ app.post('/api/notes/add', (req, res) => {
     connection.query("INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)", [userId, title, content], () => res.json({ success: true }));
 });
 
-// Toggle Like System
 app.post('/api/notes/like', (req, res) => {
     const { noteId, userId } = req.body;
     connection.query("SELECT * FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId], (err, result) => {
         if (result.length > 0) {
-            // Unlike
             connection.query("DELETE FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId]);
             connection.query("UPDATE notes SET likes = likes - 1 WHERE id = ?", [noteId]);
             res.json({ liked: false });
         } else {
-            // Like
             connection.query("INSERT INTO note_likes (user_id, note_id) VALUES (?, ?)", [userId, noteId]);
             connection.query("UPDATE notes SET likes = likes + 1 WHERE id = ?", [noteId]);
             res.json({ liked: true });
@@ -74,32 +71,28 @@ app.post('/api/notes/delete', (req, res) => {
     connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
 });
 
-// --- Leaderboard (No Level) ---
+// --- Leaderboard (นับจำนวนโน๊ตสดๆ จากตาราง notes) ---
 app.get('/api/leaderboard', (req, res) => {
     const { filter } = req.query;
-    let orderBy = "(IFNULL(s.total_notes,0) * 5 + IFNULL(sum_likes.total,0)) DESC";
-    if (filter === "notes") orderBy = "s.total_notes DESC";
+    let orderBy = "(notes_count * 5 + IFNULL(sum_likes.total,0)) DESC";
+    if (filter === "notes") orderBy = "notes_count DESC";
     else if (filter === "likes") orderBy = "IFNULL(sum_likes.total,0) DESC";
 
     const sql = `
         SELECT u.username, u.country, u.created_at, 
-               IFNULL(s.total_notes, 0) as notes,
+               (SELECT COUNT(*) FROM notes WHERE user_id = u.id) as notes_count,
                IFNULL(sum_likes.total, 0) as total_likes
         FROM users u 
-        LEFT JOIN game_stats s ON u.id = s.user_id
         LEFT JOIN (SELECT user_id, SUM(likes) as total FROM notes GROUP BY user_id) sum_likes ON u.id = sum_likes.user_id
         ORDER BY ${orderBy} LIMIT 50`;
     connection.query(sql, (err, result) => res.json(result));
 });
 
-// --- User Stats & Profile ---
-app.post('/api/save-stats', (req, res) => {
-    const { userId, totalNotes } = req.body;
-    connection.query("INSERT INTO game_stats (user_id, total_notes) VALUES (?, ?) ON DUPLICATE KEY UPDATE total_notes=?", [userId, totalNotes, totalNotes], () => res.json({success: true}));
-});
-
+// --- User Stats (ดึงจำนวนโน๊ตปัจจุบัน ไม่รวมที่ลบ) ---
 app.get('/api/load-stats/:userId', (req, res) => {
-    connection.query("SELECT total_notes FROM game_stats WHERE user_id = ?", [req.params.userId], (err, result) => res.json(result[0] || {total_notes:0}));
+    connection.query("SELECT COUNT(*) as total_notes FROM notes WHERE user_id = ?", [req.params.userId], (err, result) => {
+        res.json(result[0] || { total_notes: 0 });
+    });
 });
 
 app.get('/api/user-info/:userId', (req, res) => {
@@ -112,4 +105,4 @@ app.post('/api/update-profile', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server started on ${PORT}`));

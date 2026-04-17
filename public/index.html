@@ -6,7 +6,7 @@
     <style>
         :root { --bg: #f5f6fa; --text: #2f3640; --box: #ffffff; --border: #dcdde1; --accent: #27ae60; --danger: #e74c3c; --nav-h: 60px; }
         body.dark-mode { --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32; }
-        body { font-family: 'Segoe UI', 'Tahoma', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
         #leaderboard { width: 320px; background: var(--box); border-right: 1px solid var(--border); padding: 15px; overflow-y: auto; display: none; }
         .lb-item { border-bottom: 1px solid var(--border); padding: 10px 0; font-size: 13px; }
@@ -14,7 +14,7 @@
 
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
         .nav { width: 100%; height: var(--nav-h); background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
-        .tab-btn { background: none; border: none; padding: 0 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 4px solid transparent; height: 100%; font-size: 14px; }
+        .tab-btn { background: none; border: none; padding: 0 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 4px solid transparent; height: 100%; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
         .sidebar { position: fixed; right: -350px; top: var(--nav-h); width: 300px; height: calc(100% - var(--nav-h)); background: var(--box); transition: 0.3s; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 90; border-top: 1px solid var(--border); overflow-y: auto; }
@@ -127,7 +127,7 @@
     </div>
 
     <script>
-        let userId = localStorage.getItem('userId'), totalNotes = 0, currentTab = 'global', currentLang = 'th';
+        let userId = localStorage.getItem('userId'), currentTab = 'global', currentLang = 'th';
         const countries = ["Thailand 🇹🇭", "USA 🇺🇸", "Japan 🇯🇵", "Korea 🇰🇷", "China 🇨🇳"];
 
         const i18n = {
@@ -170,36 +170,20 @@
             if(userId) fetchNotes(); 
         }
 
-        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-        function toggleAuth(p) { 
-            document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none';
-            document.getElementById('signup-box').style.display = p === 'signup' ? 'block' : 'none';
-        }
-        function toggleSide() { document.getElementById('side').classList.toggle('active'); if(document.getElementById('side').classList.contains('active')) loadEditInfo(); }
-        function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; if(document.getElementById('show-lb').checked) fetchLB(); }
-
-        async function handleAuth(type) {
-            const u = document.getElementById(type === 'signin' ? 'user-in' : 'user-up').value;
-            const p = document.getElementById(type === 'signin' ? 'pass-in' : 'pass-up').value;
-            const c = type === 'signup' ? document.getElementById('country-up').value : '';
-            const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, country:c}) });
-            if (res.ok) {
-                if(type === 'signin') { userId = (await res.json()).userId; localStorage.setItem('userId', userId); loadGame(); }
-                else { alert("Success!"); toggleAuth('signin'); }
-            } else alert("Error!");
-        }
-
         async function loadGame() {
             document.getElementById('auth-section').style.display = 'none';
             document.getElementById('game-nav').style.display = 'flex';
             document.getElementById('game-section').style.display = 'flex';
-            const res = await fetch(`/api/load-stats/${userId}`);
-            const data = await res.json();
-            totalNotes = data.total_notes;
-            updateUI(); fetchNotes(); fetchLB();
+            await updateStats();
+            fetchNotes();
+            fetchLB();
         }
 
-        function updateUI() { document.getElementById('note-txt').innerText = totalNotes; }
+        async function updateStats() {
+            const res = await fetch(`/api/load-stats/${userId}`);
+            const data = await res.json();
+            document.getElementById('note-txt').innerText = data.total_notes;
+        }
 
         async function fetchNotes() {
             const sort = document.getElementById('note-sort').value;
@@ -217,24 +201,30 @@
                 </div>`).join('');
         }
 
-        async function likeNote(id) {
-            await fetch('/api/notes/like', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) });
-            fetchNotes();
-        }
-
         async function submitNote() {
             const title = document.getElementById('note-title-input').value.trim();
             const content = document.getElementById('note-input').value.trim();
             if(!content) return;
             await fetch('/api/notes/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, title, content}) });
-            totalNotes++;
-            await fetch('/api/save-stats', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, totalNotes}) });
             document.getElementById('note-title-input').value = "";
             document.getElementById('note-input').value = "";
-            closeModal('note-modal'); fetchNotes(); updateUI();
+            closeModal('note-modal');
+            await updateStats();
+            fetchNotes();
         }
 
-        async function deleteNote(id) { if(confirm(i18n[currentLang]["msg-del"])) { await fetch('/api/notes/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) }); fetchNotes(); } }
+        async function deleteNote(id) {
+            if(confirm(i18n[currentLang]["msg-del"])) {
+                await fetch('/api/notes/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) });
+                await updateStats();
+                fetchNotes();
+            }
+        }
+
+        async function likeNote(id) {
+            await fetch('/api/notes/like', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) });
+            fetchNotes();
+        }
 
         async function fetchLB() {
             const f = document.getElementById('lb-filter').value;
@@ -243,16 +233,28 @@
             document.getElementById('rank-list').innerHTML = data.map((r, i) => `
                 <div class="lb-item">
                     <b>#${i+1} ${r.username}</b><br>
-                    <div class="lb-meta">${r.country} | 📝 ${r.notes} | ❤️ ${r.total_likes}<br>${new Date(r.created_at).toLocaleDateString()}</div>
+                    <div class="lb-meta">${r.country} | 📝 ${r.notes_count} | ❤️ ${r.total_likes}</div>
                 </div>`).join('');
         }
 
-        function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
+        // --- Other functions (Theme, Auth toggle, Sidebar, etc.) ---
+        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+        function toggleAuth(p) { document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none'; document.getElementById('signup-box').style.display = p === 'signup' ? 'block' : 'none'; }
+        async function handleAuth(type) {
+            const u = document.getElementById(type === 'signin' ? 'user-in' : 'user-up').value;
+            const p = document.getElementById(type === 'signin' ? 'pass-in' : 'pass-up').value;
+            const c = type === 'signup' ? document.getElementById('country-up').value : '';
+            const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, country:c}) });
+            if (res.ok) { if(type === 'signin') { userId = (await res.json()).userId; localStorage.setItem('userId', userId); loadGame(); } else toggleAuth('signin'); }
+        }
+        function toggleSide() { document.getElementById('side').classList.toggle('active'); if(document.getElementById('side').classList.contains('active')) loadEditInfo(); }
         async function loadEditInfo() { const res = await fetch(`/api/user-info/${userId}`); const d = await res.json(); document.getElementById('edit-user').value = d.username; document.getElementById('edit-pass').value = d.password; document.getElementById('edit-country').value = d.country; }
         async function updateProfile() { await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); alert(i18n[currentLang]["msg-save"]); }
+        function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
         function logout() { localStorage.removeItem('userId'); location.reload(); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; if(document.getElementById('show-lb').checked) fetchLB(); }
     </script>
 </body>
 </html>
