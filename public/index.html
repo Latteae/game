@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Cloud Tree Game</title>
+    <title>Cloud Farming Game</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f4f8; padding-top: 50px; }
-        .game-container { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 300px; }
-        input, select { width: 85%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-        button { background: #4caf50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; margin: 5px; }
-        #tree-display { font-size: 100px; margin: 20px; }
+        body { font-family: sans-serif; text-align: center; background: #eef2f5; padding-top: 50px; margin: 0; }
+        .game-container { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); min-width: 320px; }
+        input, select { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { opacity: 0.8; }
+        #tree-display { font-size: 80px; margin: 20px; }
+
+        /* ปุ่ม Setting ขวาบน */
+        .menu-btn { position: fixed; top: 20px; right: 20px; font-size: 30px; cursor: pointer; display: none; z-index: 100; }
         
-        /* Sidebar Settings */
-        .menu-btn { position: fixed; top: 20px; right: 20px; font-size: 30px; cursor: pointer; display: none; }
-        .sidebar { position: fixed; top: 0; right: -350px; width: 280px; height: 100%; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: 0.3s; padding: 20px; text-align: left; z-index: 100; }
+        /* Sidebar สไลด์จากขวา */
+        .sidebar { position: fixed; top: 0; right: -350px; width: 280px; height: 100%; background: white; box-shadow: -3px 0 10px rgba(0,0,0,0.1); transition: 0.3s; padding: 25px; text-align: left; z-index: 101; }
         .sidebar.active { right: 0; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 90; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 99; }
     </style>
 </head>
 <body>
+
     <div id="menu-icon" class="menu-btn" onclick="toggleSidebar()">☰</div>
 
     <div id="auth-section" class="game-container">
-        <h2>ยินดีต้อนรับ</h2>
+        <h2>Farming Cloud</h2>
         <input type="text" id="username" placeholder="Username">
         <input type="password" id="password" placeholder="Password">
         <select id="country">
@@ -30,30 +34,31 @@
             <option value="Japan">Japan</option>
             <option value="USA">USA</option>
         </select><br>
-        <button onclick="handleAuth('signin')">Sign In</button>
-        <button onclick="handleAuth('signup')" style="background:#2196F3">Sign Up</button>
-        <p id="auth-msg" style="color:red"></p>
+        <button onclick="handleAuth('signin')">เข้าสู่ระบบ</button>
+        <button onclick="handleAuth('signup')" style="background:#007bff">สมัครสมาชิก</button>
     </div>
 
     <div id="game-section" class="game-container" style="display:none">
-        <h2 id="welcome-msg"></h2>
+        <h3 id="welcome-msg"></h3>
         <div id="tree-display">🌱</div>
-        <div>เลเวล: <span id="level">1</span> | Exp: <span id="exp">0</span></div><br>
+        <p>เลเวล: <span id="level">1</span> | Exp: <span id="exp">0</span></p>
         <button onclick="clickTree()">รดน้ำต้นไม้ 💧</button>
     </div>
 
     <div id="sidebar" class="sidebar">
-        <h3>การตั้งค่า</h3>
-        <label>Username:</label><input type="text" id="edit-user">
-        <label>Password:</label><input type="password" id="edit-pass">
-        <label>Country:</label>
+        <h3>การตั้งค่าโปรไฟล์</h3>
+        <label>ชื่อผู้ใช้:</label> <input type="text" id="edit-user">
+        <label>รหัสผ่าน:</label> <input type="password" id="edit-pass">
+        <label>ประเทศ:</label>
         <select id="edit-country">
             <option value="Thailand">Thailand</option>
             <option value="Japan">Japan</option>
             <option value="USA">USA</option>
         </select><br><br>
-        <button onclick="updateProfile()">บันทึก</button>
-        <button onclick="toggleSidebar()" style="background:#ccc">ยกเลิก</button>
+        <button onclick="updateProfile()">ยืนยันแก้ไข</button>
+        <button onclick="toggleSidebar()" style="background:#6c757d">ยกเลิก</button>
+        <hr>
+        <button onclick="location.reload()" style="background:#dc3545; width:100%">Log Out</button>
     </div>
     <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
@@ -84,9 +89,10 @@
 
         async function showGame(name) {
             document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('game-section').style.display = 'inline-block';
-            document.getElementById('menu-icon').style.display = 'block';
+            document.getElementById('game-section').style.display = 'block';
+            document.getElementById('menu-icon').style.display = 'block'; // แสดงปุ่ม ☰
             document.getElementById('welcome-msg').innerText = `สวนของ ${name}`;
+            
             const res = await fetch(`/api/load/${currentUserId}`);
             const data = await res.json();
             level = data.level; exp = data.exp;
@@ -140,7 +146,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ userId: currentUserId, newUsername, newPassword, newCountry })
             });
-            if (res.ok) { alert("อัปเดตแล้ว!"); location.reload(); }
+            if (res.ok) { alert("แก้ไขเรียบร้อย!"); location.reload(); }
             else { const d = await res.json(); alert(d.error); }
         }
     </script>
