@@ -5,61 +5,74 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. เชื่อมต่อฐานข้อมูล MySQL (ใช้ค่าจาก Railway Variables)
+// เชื่อมต่อฐานข้อมูล (ใช้ค่าจาก Railway)
 const connection = mysql.createConnection(process.env.DATABASE_URL || process.env.MYSQL_URL);
 
 connection.connect((err) => {
     if (err) {
-        console.error('Error connecting to DB: ' + err.stack);
+        console.error('Database connection failed: ' + err.stack);
         return;
     }
     console.log('Connected to MySQL Database.');
 });
 
-// 2. ตั้งค่าให้ Server รู้จักโฟลเดอร์ public (ที่เก็บไฟล์ index.html)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// 3. สร้าง API ง่ายๆ สำหรับทดสอบ (เอาไว้เช็กว่า Cloud ทำงานไหม)
-app.get('/api/hello', (req, res) => {
-    res.json({ message: "Hello from Cloud Server!", status: "Connected" });
-});
+// --- API สำหรับระบบ Account ---
 
-// API สำหรับดึงคะแนนล่าสุดจาก Database
-app.get('/api/load', (req, res) => {
-    const sql = "SELECT level, exp FROM game_stats WHERE user_id = 1";
-    connection.query(sql, (err, result) => {
+// 1. สมัครสมาชิก (Sign Up)
+app.post('/api/signup', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: "กรุณากรอกข้อมูลให้ครบ" });
+
+    const sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+    connection.query(sql, [username, password], (err, result) => {
         if (err) {
-            console.error(err);
+            if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: "ชื่อผู้ใช้นี้มีคนใช้แล้ว!" });
             return res.status(500).json({ error: "Database Error" });
         }
+        res.json({ message: "สมัครสมาชิกสำเร็จ!" });
+    });
+});
+
+// 2. เข้าสู่ระบบ (Sign In)
+app.post('/api/signin', (req, res) => {
+    const { username, password } = req.body;
+    const sql = "SELECT id FROM users WHERE username = ? AND password = ?";
+    connection.query(sql, [username, password], (err, result) => {
+        if (err) return res.status(500).json({ error: "Database Error" });
         if (result.length > 0) {
-            res.json(result[0]); // ส่งข้อมูลเลเวลและ exp กลับไปที่หน้าเว็บ
+            res.json({ userId: result[0].id });
         } else {
-            res.json({ level: 1, exp: 0 }); // ถ้ายังไม่มีข้อมูล ให้เริ่มที่เลเวล 1
+            res.status(401).json({ error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" });
         }
     });
 });
 
-// 4. สั่งให้ Server เริ่มทำงาน
-const PORT = process.env.PORT || 8080;
+// --- API สำหรับตัวเกม ---
 
-// เพิ่มส่วนนี้เข้าไปใน index.js (ก่อนบรรทัด app.listen)
-
-// API สำหรับบันทึกคะแนนลง Database
+// 3. บันทึกข้อมูลเกม
 app.post('/api/save', (req, res) => {
-    const { level, exp } = req.body;
-    const sql = "INSERT INTO game_stats (user_id, level, exp) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE level = ?, exp = ?";
-    
-    connection.query(sql, [level, exp, level, exp], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Database Error" });
-        }
-        res.json({ message: "Saved!" });
+    const { userId, level, exp } = req.body;
+    const sql = "INSERT INTO game_stats (user_id, level, exp) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, exp = ?";
+    connection.query(sql, [userId, level, exp, level, exp], (err) => {
+        if (err) return res.status(500).json({ error: "Save Error" });
+        res.json({ message: "Saved" });
     });
 });
 
+// 4. โหลดข้อมูลเกม
+app.get('/api/load/:userId', (req, res) => {
+    const sql = "SELECT level, exp FROM game_stats WHERE user_id = ?";
+    connection.query(sql, [req.params.userId], (err, result) => {
+        if (err) return res.status(500).json({ error: "Load Error" });
+        if (result.length > 0) res.json(result[0]);
+        else res.json({ level: 1, exp: 0 });
+    });
+});
+
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

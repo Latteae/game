@@ -2,66 +2,125 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>My Cloud Tree Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Tree Game - Login System</title>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #e0f2f1; padding-top: 50px; }
-        .game-container { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        #tree-display { font-size: 100px; margin: 20px; }
-        button { background-color: #4caf50; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        .stats { margin-top: 20px; font-size: 20px; color: #333; }
+        body { font-family: 'Kanit', sans-serif; text-align: center; background-color: #f0f4f8; padding-top: 50px; }
+        .game-container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); min-width: 300px; }
+        #tree-display { font-size: 120px; margin: 20px; transition: transform 0.2s; }
+        #tree-display:active { transform: scale(1.1); }
+        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        button { background-color: #4caf50; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 10px; cursor: pointer; margin: 5px; }
+        button:hover { opacity: 0.9; }
+        .stats { margin-top: 20px; font-size: 20px; font-weight: bold; color: #2d3748; }
+        #auth-msg { color: #e53e3e; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>ต้นไม้ของฉันบน Cloud</h1>
+
+    <div id="auth-section" class="game-container">
+        <h2 style="color: #2b6cb0;">ยินดีต้อนรับ</h2>
+        <p>กรุณาเข้าสู่ระบบเพื่อรดน้ำต้นไม้</p>
+        <input type="text" id="username" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="password" placeholder="รหัสผ่าน">
+        <br>
+        <button onclick="handleAuth('signin')">เข้าสู่ระบบ</button>
+        <button onclick="handleAuth('signup')" style="background-color: #3182ce;">สมัครสมาชิก</button>
+        <p id="auth-msg"></p>
+    </div>
+
+    <div id="game-section" class="game-container" style="display: none;">
+        <h2 id="welcome-msg" style="color: #2f855a;"></h2>
         <div id="tree-display">🌱</div>
         <div class="stats">เลเวล: <span id="level">1</span> | Exp: <span id="exp">0</span></div>
         <br>
         <button onclick="clickTree()">รดน้ำต้นไม้ 💧</button>
-        <p id="status-msg">ลองรดน้ำเพื่อเก็บ Exp ดูสิ!</p>
+        <br><br>
+        <button onclick="logout()" style="background-color: #a0aec0; font-size: 12px;">ออกจากระบบ</button>
     </div>
 
     <script>
-        let exp = 0;
-        let level = 1;
+        let currentUserId = null;
+        let exp = 0, level = 1;
         const trees = ['🌱', '🌿', '🌳', '🌲', '✨🌳✨'];
 
-        window.onload = async function() {
-        const response = await fetch('/api/load');
-        const data = await response.json();
-        level = data.level;
-        exp = data.exp;
-        document.getElementById('level').innerText = level;
-        document.getElementById('exp').innerText = exp;
-        updateTreeIcon();
-        document.getElementById('status-msg').innerText = "โหลดข้อมูลล่าสุดเรียบร้อย!";
-    };
-    
+        // ฟังก์ชันจัดการ Login / Signup
+        async function handleAuth(type) {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const msgArea = document.getElementById('auth-msg');
+
+            if (!user || !pass) {
+                msgArea.innerText = "กรุณากรอกให้ครบทุกช่อง";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/${type}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    if (type === 'signin') {
+                        currentUserId = data.userId;
+                        showGame(user);
+                    } else {
+                        alert("สมัครสมาชิกสำเร็จ! ลองเข้าสู่ระบบดูนะ");
+                        msgArea.innerText = "";
+                    }
+                } else {
+                    msgArea.innerText = data.error;
+                }
+            } catch (err) {
+                msgArea.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+            }
+        }
+
+        // ฟังก์ชันเปลี่ยนหน้าจอไปที่เกม
+        async function showGame(username) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('game-section').style.display = 'inline-block';
+            document.getElementById('welcome-msg').innerText = `สวนของ ${username}`;
+            
+            // โหลดข้อมูลล่าสุดจาก Database
+            const res = await fetch(`/api/load/${currentUserId}`);
+            const data = await res.json();
+            level = data.level; 
+            exp = data.exp;
+            updateUI();
+        }
+
+        // ฟังก์ชันตอนกดปุ่มรดน้ำ
         function clickTree() {
             exp += 10;
             if (exp >= 50) {
                 exp = 0;
                 level++;
-                updateTreeIcon();
             }
-            document.getElementById('exp').innerText = exp;
-            document.getElementById('level').innerText = level;
-            saveData(); // ฟังก์ชันส่งข้อมูลไป Cloud
+            updateUI();
+            saveData(); // บันทึกลง Cloud ทันทีที่กด
         }
 
-        function updateTreeIcon() {
+        function updateUI() {
+            document.getElementById('level').innerText = level;
+            document.getElementById('exp').innerText = exp;
             let iconIndex = Math.min(level - 1, trees.length - 1);
             document.getElementById('tree-display').innerText = trees[iconIndex];
         }
 
         async function saveData() {
-            // โค้ดส่วนนี้จะส่งข้อมูลไปบันทึกที่ Database ของ Railway
             await fetch('/api/save', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ level: level, exp: exp })
+                body: JSON.stringify({ userId: currentUserId, level: level, exp: exp })
             });
+        }
+
+        function logout() {
+            location.reload();
         }
     </script>
 </body>
