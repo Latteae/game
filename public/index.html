@@ -49,9 +49,15 @@
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             const msgArea = document.getElementById('auth-msg');
+            const pattern = /^[a-zA-Z0-9-_]+$/;
 
             if (!user || !pass) {
                 msgArea.innerText = "กรุณากรอกให้ครบทุกช่อง";
+                return;
+            }
+
+            if (!pattern.test(user) || !pattern.test(pass)) {
+                msgArea.innerText = "Username และ Password ต้องเป็นภาษาอังกฤษ ตัวเลข หรือ - และ _ เท่านั้น (ห้ามเว้นวรรค)";
                 return;
             }
 
