@@ -2,79 +2,106 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Cloud Farming Game</title>
+    <title>Cloud Farming V2</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #eef2f5; padding-top: 50px; margin: 0; }
-        .game-container { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); min-width: 320px; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        button:hover { opacity: 0.8; }
-        #tree-display { font-size: 80px; margin: 20px; }
-
-        /* ปุ่ม Setting ขวาบน */
-        .menu-btn { position: fixed; top: 20px; right: 20px; font-size: 30px; cursor: pointer; display: none; z-index: 100; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f2f5; }
         
-        /* Sidebar สไลด์จากขวา */
-        .sidebar { position: fixed; top: 0; right: -350px; width: 280px; height: 100%; background: white; box-shadow: -3px 0 10px rgba(0,0,0,0.1); transition: 0.3s; padding: 25px; text-align: left; z-index: 101; }
+        /* Leaderboard Style */
+        #leaderboard { width: 320px; background: white; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+        .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .rank-info { font-size: 14px; }
+        .rank-name { font-weight: bold; display: block; }
+        .rank-date { font-size: 11px; color: #999; }
+        .rank-level { color: #2ecc71; font-weight: bold; }
+
+        /* Main Content Style */
+        #content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .box { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; min-width: 350px; }
+        input, select { width: 90%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #219150; }
+        
+        /* Sidebar Style */
+        .sidebar { position: fixed; top: 0; right: -350px; width: 300px; height: 100%; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: 0.3s; padding: 30px; z-index: 100; text-align: left; }
         .sidebar.active { right: 0; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 99; }
+        .menu-btn { position: fixed; top: 20px; right: 20px; font-size: 30px; cursor: pointer; display: none; }
+        #tree-display { font-size: 120px; margin: 15px; }
     </style>
 </head>
 <body>
 
-    <div id="menu-icon" class="menu-btn" onclick="toggleSidebar()">☰</div>
-
-    <div id="auth-section" class="game-container">
-        <h2>Farming Cloud</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <select id="country">
-            <option value="">-- เลือกประเทศ --</option>
-            <option value="Thailand">Thailand</option>
-            <option value="Japan">Japan</option>
-            <option value="USA">USA</option>
-        </select><br>
-        <button onclick="handleAuth('signin')">เข้าสู่ระบบ</button>
-        <button onclick="handleAuth('signup')" style="background:#007bff">สมัครสมาชิก</button>
+    <div id="leaderboard">
+        <h2 style="color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">🏆 อันดับโลก</h2>
+        <div id="rank-list">กำลังโหลด...</div>
     </div>
 
-    <div id="game-section" class="game-container" style="display:none">
-        <h3 id="welcome-msg"></h3>
-        <div id="tree-display">🌱</div>
-        <p>เลเวล: <span id="level">1</span> | Exp: <span id="exp">0</span></p>
-        <button onclick="clickTree()">รดน้ำต้นไม้ 💧</button>
+    <div id="content">
+        <div id="menu-icon" class="menu-btn" onclick="toggleSidebar()">☰</div>
+
+        <div id="signin-page" class="box">
+            <h1 style="margin-top:0">Sign In</h1>
+            <input type="text" id="user-in" placeholder="Username">
+            <input type="password" id="pass-in" placeholder="Password">
+            <button onclick="auth('signin')">เข้าสู่ระบบ</button>
+            <p style="font-size:13px">ยังไม่มีบัญชี? <a href="#" onclick="switchPage('signup')">สมัครที่นี่</a></p>
+        </div>
+
+        <div id="signup-page" class="box" style="display:none">
+            <h1 style="margin-top:0">Sign Up</h1>
+            <input type="text" id="user-up" placeholder="Username">
+            <input type="password" id="pass-up" placeholder="Password">
+            <select id="country-up"></select>
+            <button onclick="auth('signup')" style="background:#2980b9">สร้างบัญชี</button>
+            <p style="font-size:13px">มีบัญชีแล้ว? <a href="#" onclick="switchPage('signin')">ล็อกอิน</a></p>
+        </div>
+
+        <div id="game-page" class="box" style="display:none">
+            <h2 id="welcome-msg" style="color:#2c3e50"></h2>
+            <div id="tree-display">🌱</div>
+            <p style="font-size: 20px;">เลเวล: <span id="level" style="color:#27ae60">1</span> | Exp: <span id="exp">0</span></p>
+            <button onclick="clickTree()">รดน้ำต้นไม้ 💧</button>
+        </div>
     </div>
 
     <div id="sidebar" class="sidebar">
-        <h3>การตั้งค่าโปรไฟล์</h3>
-        <label>ชื่อผู้ใช้:</label> <input type="text" id="edit-user">
-        <label>รหัสผ่าน:</label> <input type="password" id="edit-pass">
-        <label>ประเทศ:</label>
-        <select id="edit-country">
-            <option value="Thailand">Thailand</option>
-            <option value="Japan">Japan</option>
-            <option value="USA">USA</option>
-        </select><br><br>
-        <button onclick="updateProfile()">ยืนยันแก้ไข</button>
-        <button onclick="toggleSidebar()" style="background:#6c757d">ยกเลิก</button>
-        <hr>
-        <button onclick="location.reload()" style="background:#dc3545; width:100%">Log Out</button>
+        <h2>ตั้งค่าโปรไฟล์</h2>
+        <label>Username:</label> <input type="text" id="edit-user">
+        <label>Password:</label> <input type="password" id="edit-pass">
+        <label>Country:</label> <select id="edit-country"></select>
+        <br><br>
+        <button onclick="updateProfile()" style="width:100%">บันทึกข้อมูล</button>
+        <button onclick="toggleSidebar()" style="background:#95a5a6; width:100%">ยกเลิก</button>
+        <hr style="margin: 20px 0;">
+        <button onclick="location.reload()" style="background:#e74c3c; width:100%">Log Out</button>
     </div>
-    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
     <script>
         let currentUserId = null, exp = 0, level = 1;
         const trees = ['🌱', '🌿', '🌳', '🌲', '✨🌳✨'];
-        const pattern = /^[a-zA-Z0-9-_]+$/;
+        const countryList = [
+            {n: "Thailand", f: "🇹🇭"}, {n: "USA", f: "🇺🇸"}, {n: "Japan", f: "🇯🇵"},
+            {n: "South Korea", f: "🇰🇷"}, {n: "UK", f: "🇬🇧"}, {n: "China", f: "🇨🇳"},
+            {n: "Germany", f: "🇩🇪"}, {n: "France", f: "🇫🇷"}, {n: "Vietnam", f: "🇻🇳"},
+            {n: "Singapore", f: "🇸🇬"}, {n: "Australia", f: "🇦🇺"}, {n: "Canada", f: "🇨🇦"}
+        ];
 
-        async function handleAuth(type) {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            const country = document.getElementById('country').value;
+        function fillSelects() {
+            const htmlSignup = '<option value="">-- เลือกประเทศ --</option>' + countryList.map(c => `<option value="${c.n}">${c.f} ${c.n}</option>`).join('');
+            const htmlEdit = countryList.map(c => `<option value="${c.n}">${c.f} ${c.n}</option>`).join('');
+            document.getElementById('country-up').innerHTML = htmlSignup;
+            document.getElementById('edit-country').innerHTML = htmlEdit;
+        }
 
-            if (!user || !pass || (type==='signup' && !country)) return alert("กรุณากรอกข้อมูลให้ครบ");
-            if (!pattern.test(user) || !pattern.test(pass)) return alert("ห้ามใช้ภาษาไทย/เว้นวรรค/อักขระพิเศษ");
+        function switchPage(page) {
+            document.getElementById('signin-page').style.display = page === 'signin' ? 'block' : 'none';
+            document.getElementById('signup-page').style.display = page === 'signup' ? 'block' : 'none';
+        }
 
+        async function auth(type) {
+            const user = document.getElementById(type==='signin'?'user-in':'user-up').value;
+            const pass = document.getElementById(type==='signin'?'pass-in':'pass-up').value;
+            const country = type==='signup' ? document.getElementById('country-up').value : '-';
+            
             const res = await fetch(`/api/${type}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -82,28 +109,42 @@
             });
             const data = await res.json();
             if (res.ok) {
-                if (type === 'signin') { currentUserId = data.userId; showGame(user); }
-                else alert("สมัครสำเร็จ! กดเข้าสู่ระบบได้เลย");
+                if(type === 'signin') { currentUserId = data.userId; startGame(user); }
+                else { alert("สมัครสำเร็จ! กรุณาล็อกอิน"); switchPage('signin'); }
             } else alert(data.error);
         }
 
-        async function showGame(name) {
-            document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('game-section').style.display = 'block';
-            document.getElementById('menu-icon').style.display = 'block'; // แสดงปุ่ม ☰
+        async function startGame(name) {
+            document.getElementById('signin-page').style.display = 'none';
+            document.getElementById('game-page').style.display = 'block';
+            document.getElementById('menu-icon').style.display = 'block';
             document.getElementById('welcome-msg').innerText = `สวนของ ${name}`;
-            
             const res = await fetch(`/api/load/${currentUserId}`);
             const data = await res.json();
             level = data.level; exp = data.exp;
-            updateUI();
+            updateUI(); updateLeaderboard();
+        }
+
+        async function updateLeaderboard() {
+            const res = await fetch('/api/leaderboard');
+            const data = await res.json();
+            document.getElementById('rank-list').innerHTML = data.map((l, i) => {
+                const flag = countryList.find(c => c.n === l.country)?.f || '🏳️';
+                return `
+                <div class="rank-item">
+                    <div class="rank-info">
+                        <span class="rank-name">#${i+1} ${l.username} ${flag}</span>
+                        <span class="rank-date">เข้าร่วม: ${new Date(l.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <span class="rank-level">Lv.${l.level}</span>
+                </div>`;
+            }).join('');
         }
 
         function clickTree() {
             exp += 10;
             if (exp >= 50) { exp = 0; level++; }
-            updateUI();
-            saveData();
+            updateUI(); saveGame();
         }
 
         function updateUI() {
@@ -112,23 +153,22 @@
             document.getElementById('tree-display').innerText = trees[Math.min(level-1, 4)];
         }
 
-        async function saveData() {
+        async function saveGame() {
             await fetch('/api/save', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ userId: currentUserId, level, exp })
             });
+            updateLeaderboard();
         }
 
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('overlay');
             sb.classList.toggle('active');
-            ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
-            if(sb.classList.contains('active')) loadSettings();
+            if(sb.classList.contains('active')) fetchInfo();
         }
 
-        async function loadSettings() {
+        async function fetchInfo() {
             const res = await fetch(`/api/user-info/${currentUserId}`);
             const data = await res.json();
             document.getElementById('edit-user').value = data.username;
@@ -137,18 +177,29 @@
         }
 
         async function updateProfile() {
-            const newUsername = document.getElementById('edit-user').value;
-            const newPassword = document.getElementById('edit-pass').value;
-            const newCountry = document.getElementById('edit-country').value;
-            
+            const newUser = document.getElementById('edit-user').value;
             const res = await fetch('/api/update-profile', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId: currentUserId, newUsername, newPassword, newCountry })
+                body: JSON.stringify({
+                    userId: currentUserId,
+                    newUsername: newUser,
+                    newPassword: document.getElementById('edit-pass').value,
+                    newCountry: document.getElementById('edit-country').value
+                })
             });
-            if (res.ok) { alert("แก้ไขเรียบร้อย!"); location.reload(); }
-            else { const d = await res.json(); alert(d.error); }
+            if (res.ok) {
+                alert("อัปเดตแล้ว!");
+                document.getElementById('welcome-msg').innerText = `สวนของ ${newUser}`;
+                toggleSidebar();
+                updateLeaderboard();
+            } else {
+                const d = await res.json(); alert(d.error);
+            }
         }
+
+        fillSelects();
+        updateLeaderboard();
     </script>
 </body>
 </html>
