@@ -4,35 +4,29 @@
     <meta charset="UTF-8">
     <title>Record of taking Notes</title>
     <style>
-        :root {
-            --bg: #f5f6fa; --text: #2f3640; --box: #ffffff; --border: #dcdde1; --accent: #27ae60;
-        }
-        body.dark-mode {
-            --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32;
-        }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; transition: 0.3s; }
-        
-        /* Layout */
+        :root { --bg: #f5f6fa; --text: #2f3640; --box: #ffffff; --border: #dcdde1; --accent: #27ae60; }
+        body.dark-mode { --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; transition: 0.3s; overflow: hidden; }
+
         #leaderboard { width: 300px; background: var(--box); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; display: none; }
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        /* UI Components */
-        .nav { width: 100%; height: 60px; background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
-        .box { background: var(--box); padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; margin-top: 50px; }
+        .nav { width: 100%; height: 60px; background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; }
         .tab-btn { background: none; border: none; padding: 10px 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 3px solid transparent; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
-        
-        /* Input & Buttons */
+
+        .box { background: var(--box); padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; margin-top: 50px; }
         input, select, textarea { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
         button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* Note Display */
-        #notes-container { width: 90%; max-width: 800px; margin-top: 20px; overflow-y: auto; }
+
+        #notes-container { width: 90%; max-width: 800px; margin-top: 20px; overflow-y: auto; flex-grow: 1; padding-bottom: 40px; }
         .note-card { background: var(--box); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); text-align: left; white-space: pre-wrap; word-wrap: break-word; }
-        
-        /* Sidebar & Modals */
+
+        /* Sidebar Settings */
         .sidebar { position: fixed; right: -350px; top: 0; width: 300px; height: 100%; background: var(--box); transition: 0.3s; padding: 25px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 100; }
         .sidebar.active { right: 0; }
+        .close-side { position: absolute; top: 15px; left: 15px; font-size: 20px; cursor: pointer; color: #e74c3c; font-weight: bold; border: 1px solid #e74c3c; padding: 0 8px; border-radius: 5px; }
+
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
     </style>
 </head>
@@ -50,7 +44,7 @@
             <div style="position: absolute; right: 20px;">
                 <button onclick="toggleTheme()" style="background:#f39c12">🌓</button>
                 <button onclick="openModal()" style="background:#2980b9">📝 เขียนโน๊ต</button>
-                <button onclick="document.getElementById('side').classList.toggle('active')">⚙️</button>
+                <button onclick="toggleSide(true)">⚙️</button>
             </div>
         </div>
 
@@ -72,7 +66,7 @@
             </div>
         </div>
 
-        <div id="game-section" style="display:none; width: 100%; flex-direction: column; align-items: center;">
+        <div id="game-section" style="display:none; width: 100%; flex-direction: column; align-items: center; height: 100%;">
             <div id="stats" style="margin-top: 20px; font-size: 18px; font-weight: bold;">
                 Lv. <span id="lvl-txt">1</span> | EXP: <span id="exp-txt">0</span> / <span id="cap-txt">50</span> | 📝 <span id="note-txt">0</span>
             </div>
@@ -83,14 +77,15 @@
     <div id="note-modal" class="modal">
         <div class="box" style="width: 500px;">
             <h3>New Note</h3>
-            <textarea id="note-input" rows="10" placeholder="พิมพ์ข้อความที่นี่... (1 ตัวอักษร = 1 EXP)"></textarea>
+            <textarea id="note-input" rows="10" placeholder="พิมพ์โน๊ต... (1 ตัวอักษร = 1 EXP)"></textarea>
             <button onclick="submitNote()">บันทึก</button>
             <button onclick="closeModal()" style="background:#e74c3c">ปิด</button>
         </div>
     </div>
 
     <div id="side" class="sidebar">
-        <h3>Settings</h3>
+        <div class="close-side" onclick="toggleSide(false)">✕</div>
+        <h3 style="margin-top: 40px;">Settings</h3>
         <label><input type="checkbox" id="show-lb" onchange="toggleLB()"> แสดง Leaderboard</label>
         <hr>
         <button onclick="location.reload()" style="background:#e74c3c; width:100%">Log Out</button>
@@ -98,15 +93,15 @@
 
     <script>
         let userId = null, level = 1, exp = 0, totalNotes = 0, currentTab = 'global';
-        const countries = ["Thailand 🇹🇭", "USA 🇺🇸", "Japan 🇯🇵", "UK 🇬🇧", "Korea 🇰🇷"];
+        const countries = ["Thailand 🇹🇭", "USA 🇺🇸", "Japan 🇯🇵"];
 
         function toggleTheme() { document.body.classList.toggle('dark-mode'); }
         function toggleAuth(p) { 
             document.getElementById('login-box').style.display = p === 'login' ? 'block' : 'none';
             document.getElementById('reg-box').style.display = p === 'signup' ? 'block' : 'none';
         }
+        function toggleSide(show) { document.getElementById('side').classList.toggle('active', show); }
 
-        // --- EXP Logic ---
         function getCap(lvl) {
             if (lvl >= 100) return 24000;
             let cap = 50;
@@ -123,22 +118,21 @@
             if (e.key.length === 1 && !e.ctrlKey && !e.altKey && e.key !== ' ') {
                 exp++;
                 let cap = getCap(level);
-                if (exp >= cap) { exp = 0; level++; alert("Level Up! -> " + level); }
+                if (exp >= cap) { exp = 0; level++; }
                 updateUI();
             }
         });
 
-        // --- Core Functions ---
         async function handleAuth(type) {
             const u = document.getElementById(type==='signin'?'user-in':'user-up').value;
             const p = document.getElementById(type==='signin'?'pass-in':'pass-up').value;
             const c = type==='signup' ? document.getElementById('country-up').value : '-';
             const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, country:c}) });
-            const data = await res.json();
             if (res.ok) {
+                const data = await res.json();
                 if(type==='signin') { userId = data.userId; loadGame(); }
                 else { alert("Sign up success!"); toggleAuth('login'); }
-            } else alert(data.error);
+            } else { const d = await res.json(); alert(d.error); }
         }
 
         async function loadGame() {
@@ -172,16 +166,13 @@
             const res = await fetch(url);
             const data = await res.json();
             document.getElementById('notes-container').innerHTML = data.map(n => `
-                <div class="note-card">
-                    <small style="color:var(--accent)">@${n.username || 'You'}</small><br>${n.content}
-                </div>`).join('');
+                <div class="note-card"><small style="color:var(--accent)">@${n.username || 'You'}</small><br>${n.content}</div>`).join('');
         }
 
         async function fetchLB() {
             const res = await fetch('/api/leaderboard');
             const data = await res.json();
-            document.getElementById('rank-list').innerHTML = data.map((r, i) => `
-                <div style="font-size:13px; margin-bottom:8px">#${i+1} ${r.username} (Lv.${r.level})</div>`).join('');
+            document.getElementById('rank-list').innerHTML = data.map((r, i) => `<div style="font-size:13px; margin-bottom:8px">#${i+1} ${r.username} (Lv.${r.level})</div>`).join('');
         }
 
         function setTab(t) { 
@@ -193,8 +184,6 @@
         function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; }
         function openModal() { document.getElementById('note-modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('note-modal').style.display = 'none'; }
-
-        // Init
         document.getElementById('country-up').innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join('');
     </script>
 </body>
