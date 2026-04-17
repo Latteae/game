@@ -14,8 +14,6 @@ connection.connect(err => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const validPattern = /^[a-zA-Z0-9-_]+$/;
-
 // --- Auth APIs ---
 app.post('/api/signup', (req, res) => {
     const { username, password, country } = req.body;
@@ -34,7 +32,23 @@ app.post('/api/signin', (req, res) => {
     });
 });
 
-// --- Game & Stats APIs ---
+// ดึงข้อมูล User เพื่อไปแสดงในช่อง Edit
+app.get('/api/user-info/:userId', (req, res) => {
+    connection.query("SELECT username, password, country FROM users WHERE id = ?", [req.params.userId], (err, result) => {
+        res.json(result[0]);
+    });
+});
+
+// อัปเดตข้อมูลบัญชี
+app.post('/api/update-profile', (req, res) => {
+    const { userId, newUsername, newPassword, newCountry } = req.body;
+    connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], (err) => {
+        if (err) return res.status(400).json({ error: "Update ล้มเหลว หรือชื่อซ้ำ" });
+        res.json({ message: "Success" });
+    });
+});
+
+// --- Game & Notes APIs ---
 app.post('/api/save', (req, res) => {
     const { userId, level, exp, totalNotes } = req.body;
     const sql = "INSERT INTO game_stats (user_id, level, exp, total_notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, exp = ?, total_notes = ?";
@@ -55,7 +69,6 @@ app.get('/api/leaderboard', (req, res) => {
     connection.query(sql, (err, result) => res.json(err ? [] : result));
 });
 
-// --- Notes APIs ---
 app.post('/api/notes/add', (req, res) => {
     const { userId, content } = req.body;
     connection.query("INSERT INTO notes (user_id, content) VALUES (?, ?)", [userId, content], () => res.json({ success: true }));

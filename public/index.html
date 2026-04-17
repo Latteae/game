@@ -11,21 +11,27 @@
         #leaderboard { width: 300px; background: var(--box); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; display: none; }
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        .nav { width: 100%; height: 60px; background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; }
+        .nav { width: 100%; height: 60px; background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; position: relative; }
         .tab-btn { background: none; border: none; padding: 10px 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 3px solid transparent; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
         .box { background: var(--box); padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; margin-top: 50px; }
-        input, select, textarea { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
+        input, select, textarea { width: 90%; padding: 10px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
         button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        #notes-container { width: 90%; max-width: 800px; margin-top: 20px; overflow-y: auto; flex-grow: 1; padding-bottom: 40px; }
+        #notes-container { width: 90%; max-width: 800px; margin-top: 20px; overflow-y: auto; flex-grow: 1; }
         .note-card { background: var(--box); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); text-align: left; white-space: pre-wrap; word-wrap: break-word; }
 
         /* Sidebar Settings */
-        .sidebar { position: fixed; right: -350px; top: 0; width: 300px; height: 100%; background: var(--box); transition: 0.3s; padding: 25px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 100; }
+        .sidebar { position: fixed; right: -350px; top: 60px; width: 300px; height: calc(100% - 60px); background: var(--box); transition: 0.3s; padding: 25px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 90; }
         .sidebar.active { right: 0; }
-        .close-side { position: absolute; top: 15px; left: 15px; font-size: 20px; cursor: pointer; color: #e74c3c; font-weight: bold; border: 1px solid #e74c3c; padding: 0 8px; border-radius: 5px; }
+        
+        /* ปุ่มขีด 3 ขีด (Hamburger) */
+        .menu-btn { font-size: 24px; background: none; color: var(--text); padding: 0 15px; height: 100%; display: flex; align-items: center; cursor: pointer; }
+
+        /* ปุ่ม Leaderboard ใหญ่พิเศษ */
+        .lb-checkbox-container { display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 15px; border-radius: 10px; margin: 10px 0; cursor: pointer; border: 2px solid var(--accent); font-size: 18px; font-weight: bold; }
+        .lb-checkbox-container input { width: 25px; height: 25px; margin-right: 15px; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
     </style>
@@ -41,10 +47,10 @@
         <div class="nav" id="game-nav">
             <button class="tab-btn active" onclick="setTab('global')">Notes</button>
             <button class="tab-btn" onclick="setTab('user')">Your Notes</button>
-            <div style="position: absolute; right: 20px;">
-                <button onclick="toggleTheme()" style="background:#f39c12">🌓</button>
-                <button onclick="openModal()" style="background:#2980b9">📝 เขียนโน๊ต</button>
-                <button onclick="toggleSide(true)">⚙️</button>
+            <div style="position: absolute; right: 0; height: 100%; display: flex; align-items: center;">
+                <button onclick="toggleTheme()" style="background:#f39c12; margin-right: 5px;">🌓</button>
+                <button onclick="openModal()" style="background:#2980b9; margin-right: 5px;">📝 เขียนโน๊ต</button>
+                <div class="menu-btn" onclick="toggleSide()">☰</div>
             </div>
         </div>
 
@@ -74,6 +80,22 @@
         </div>
     </div>
 
+    <div id="side" class="sidebar">
+        <h3>Settings</h3>
+        <label class="lb-checkbox-container">
+            <input type="checkbox" id="show-lb" onchange="toggleLB()"> 
+            แสดง Leaderboard
+        </label>
+        <hr>
+        <h4>แก้ไขข้อมูลบัญชี</h4>
+        <input type="text" id="edit-user" placeholder="ชื่อใหม่">
+        <input type="password" id="edit-pass" placeholder="รหัสผ่านใหม่">
+        <select id="edit-country"></select>
+        <button onclick="updateProfile()" style="width: 100%; margin-top: 10px;">บันทึกข้อมูล</button>
+        <hr>
+        <button onclick="location.reload()" style="background:#e74c3c; width:100%">Log Out</button>
+    </div>
+
     <div id="note-modal" class="modal">
         <div class="box" style="width: 500px;">
             <h3>New Note</h3>
@@ -81,14 +103,6 @@
             <button onclick="submitNote()">บันทึก</button>
             <button onclick="closeModal()" style="background:#e74c3c">ปิด</button>
         </div>
-    </div>
-
-    <div id="side" class="sidebar">
-        <div class="close-side" onclick="toggleSide(false)">✕</div>
-        <h3 style="margin-top: 40px;">Settings</h3>
-        <label><input type="checkbox" id="show-lb" onchange="toggleLB()"> แสดง Leaderboard</label>
-        <hr>
-        <button onclick="location.reload()" style="background:#e74c3c; width:100%">Log Out</button>
     </div>
 
     <script>
@@ -100,7 +114,13 @@
             document.getElementById('login-box').style.display = p === 'login' ? 'block' : 'none';
             document.getElementById('reg-box').style.display = p === 'signup' ? 'block' : 'none';
         }
-        function toggleSide(show) { document.getElementById('side').classList.toggle('active', show); }
+        
+        // ฟังก์ชันเปิด/ปิด Sidebar แบบสไลด์จากใต้ Navbar
+        function toggleSide() {
+            const side = document.getElementById('side');
+            side.classList.toggle('active');
+            if(side.classList.contains('active')) loadEditInfo();
+        }
 
         function getCap(lvl) {
             if (lvl >= 100) return 24000;
@@ -114,6 +134,7 @@
             return Math.floor(cap);
         }
 
+        // ระบบรับ EXP เฉพาะการพิมพ์
         document.getElementById('note-input').addEventListener('keydown', (e) => {
             if (e.key.length === 1 && !e.ctrlKey && !e.altKey && e.key !== ' ') {
                 exp++;
@@ -143,6 +164,28 @@
             const data = await res.json();
             level = data.level; exp = data.exp; totalNotes = data.total_notes;
             updateUI(); fetchNotes(); fetchLB();
+        }
+
+        // โหลดข้อมูลเก่ามาใส่ในช่อง Edit
+        async function loadEditInfo() {
+            const res = await fetch(`/api/user-info/${userId}`);
+            const data = await res.json();
+            document.getElementById('edit-user').value = data.username;
+            document.getElementById('edit-pass').value = data.password;
+            document.getElementById('edit-country').value = data.country;
+        }
+
+        async function updateProfile() {
+            const newUsername = document.getElementById('edit-user').value;
+            const newPassword = document.getElementById('edit-pass').value;
+            const newCountry = document.getElementById('edit-country').value;
+            const res = await fetch('/api/update-profile', { 
+                method: 'POST', 
+                headers: {'Content-Type':'application/json'}, 
+                body: JSON.stringify({ userId, newUsername, newPassword, newCountry }) 
+            });
+            if(res.ok) alert("อัปเดตข้อมูลสำเร็จ!");
+            else { const d = await res.json(); alert(d.error); }
         }
 
         function updateUI() {
@@ -184,7 +227,11 @@
         function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; }
         function openModal() { document.getElementById('note-modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('note-modal').style.display = 'none'; }
-        document.getElementById('country-up').innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join('');
+        
+        // Init Dropdown
+        const opt = countries.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('country-up').innerHTML = opt;
+        document.getElementById('edit-country').innerHTML = opt;
     </script>
 </body>
 </html>
