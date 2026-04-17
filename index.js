@@ -9,39 +9,36 @@ const connection = mysql.createConnection(process.env.DATABASE_URL || process.en
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// --- Auth & User Info ---
+// --- Auth ---
 app.post('/api/signin', (req, res) => {
     const { username, password } = req.body;
     connection.query("SELECT id FROM users WHERE username = ? AND password = ?", [username, password], (err, result) => {
         if (result.length > 0) res.json({ userId: result[0].id });
-        else res.status(401).json({ error: "Login Fail" });
+        else res.status(401).json({ error: "Fail" });
     });
 });
 
-app.get('/api/user-info/:userId', (req, res) => {
-    connection.query("SELECT username, password, country FROM users WHERE id = ?", [req.params.userId], (err, result) => res.json(result[0] || {}));
+app.post('/api/signup', (req, res) => {
+    const { username, password, country } = req.body;
+    connection.query("INSERT INTO users (username, password, country) VALUES (?, ?, ?)", [username, password, country], (err) => {
+        if (err) return res.status(400).json({ error: "Error" });
+        res.json({ message: "Success" });
+    });
 });
 
-app.post('/api/update-profile', (req, res) => {
-    const { userId, newUsername, newPassword, newCountry } = req.body;
-    connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], () => res.json({success: true}));
-});
-
-// --- Note System with Title, Like & Filter ---
+// --- Notes System ---
 app.get('/api/notes', (req, res) => {
     const { type, userId, sort } = req.query;
     let orderBy = "n.created_at DESC";
-    
     if (sort === "oldest") orderBy = "n.created_at ASC";
     else if (sort === "likes") orderBy = "n.likes DESC";
-    else if (sort === "level") orderBy = "s.level DESC";
     else if (sort === "random") orderBy = "RAND()";
 
     let sql = `
-        SELECT n.*, u.username, s.level 
+        SELECT n.*, u.username, 
+        EXISTS(SELECT 1 FROM note_likes WHERE note_id = n.id AND user_id = ${mysql.escape(userId)}) as isLiked
         FROM notes n 
-        JOIN users u ON n.user_id = u.id 
-        LEFT JOIN game_stats s ON u.id = s.user_id`;
+        JOIN users u ON n.user_id = u.id`;
     
     if (type === "user") sql += ` WHERE n.user_id = ${mysql.escape(userId)}`;
     sql += ` ORDER BY ${orderBy} LIMIT 100`;
@@ -54,9 +51,22 @@ app.post('/api/notes/add', (req, res) => {
     connection.query("INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)", [userId, title, content], () => res.json({ success: true }));
 });
 
+// Toggle Like System
 app.post('/api/notes/like', (req, res) => {
-    const { noteId } = req.body;
-    connection.query("UPDATE notes SET likes = likes + 1 WHERE id = ?", [noteId], () => res.json({ success: true }));
+    const { noteId, userId } = req.body;
+    connection.query("SELECT * FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId], (err, result) => {
+        if (result.length > 0) {
+            // Unlike
+            connection.query("DELETE FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId]);
+            connection.query("UPDATE notes SET likes = likes - 1 WHERE id = ?", [noteId]);
+            res.json({ liked: false });
+        } else {
+            // Like
+            connection.query("INSERT INTO note_likes (user_id, note_id) VALUES (?, ?)", [userId, noteId]);
+            connection.query("UPDATE notes SET likes = likes + 1 WHERE id = ?", [noteId]);
+            res.json({ liked: true });
+        }
+    });
 });
 
 app.post('/api/notes/delete', (req, res) => {
@@ -64,17 +74,15 @@ app.post('/api/notes/delete', (req, res) => {
     connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
 });
 
-// --- Leaderboard & Stats ---
+// --- Leaderboard (No Level) ---
 app.get('/api/leaderboard', (req, res) => {
     const { filter } = req.query;
-    let orderBy = "(IFNULL(s.level,1) * 10 + IFNULL(s.total_notes,0) * 5 + IFNULL(sum_likes.total,0)) DESC";
+    let orderBy = "(IFNULL(s.total_notes,0) * 5 + IFNULL(sum_likes.total,0)) DESC";
     if (filter === "notes") orderBy = "s.total_notes DESC";
     else if (filter === "likes") orderBy = "IFNULL(sum_likes.total,0) DESC";
-    else if (filter === "level") orderBy = "s.level DESC";
 
     const sql = `
         SELECT u.username, u.country, u.created_at, 
-               IFNULL(s.level, 1) as level, 
                IFNULL(s.total_notes, 0) as notes,
                IFNULL(sum_likes.total, 0) as total_likes
         FROM users u 
@@ -84,14 +92,24 @@ app.get('/api/leaderboard', (req, res) => {
     connection.query(sql, (err, result) => res.json(result));
 });
 
-app.post('/api/save', (req, res) => {
-    const { userId, level, exp, totalNotes } = req.body;
-    connection.query("INSERT INTO game_stats (user_id, level, exp, total_notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level=?, exp=?, total_notes=?", [userId, level, exp, totalNotes, level, exp, totalNotes], () => res.json({success: true}));
+// --- User Stats & Profile ---
+app.post('/api/save-stats', (req, res) => {
+    const { userId, totalNotes } = req.body;
+    connection.query("INSERT INTO game_stats (user_id, total_notes) VALUES (?, ?) ON DUPLICATE KEY UPDATE total_notes=?", [userId, totalNotes, totalNotes], () => res.json({success: true}));
 });
 
-app.get('/api/load/:userId', (req, res) => {
-    connection.query("SELECT level, exp, total_notes FROM game_stats WHERE user_id = ?", [req.params.userId], (err, result) => res.json(result[0] || {level:1, exp:0, total_notes:0}));
+app.get('/api/load-stats/:userId', (req, res) => {
+    connection.query("SELECT total_notes FROM game_stats WHERE user_id = ?", [req.params.userId], (err, result) => res.json(result[0] || {total_notes:0}));
+});
+
+app.get('/api/user-info/:userId', (req, res) => {
+    connection.query("SELECT username, password, country FROM users WHERE id = ?", [req.params.userId], (err, result) => res.json(result[0] || {}));
+});
+
+app.post('/api/update-profile', (req, res) => {
+    const { userId, newUsername, newPassword, newCountry } = req.body;
+    connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], () => res.json({success: true}));
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server started on ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
