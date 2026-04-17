@@ -17,7 +17,6 @@ app.use(express.json());
 // --- Auth APIs ---
 app.post('/api/signup', (req, res) => {
     const { username, password, country } = req.body;
-    if (!username || !password || !country) return res.status(400).json({ error: "ข้อมูลไม่ครบ" });
     connection.query("INSERT INTO users (username, password, country) VALUES (?, ?, ?)", [username, password, country], (err) => {
         if (err) return res.status(400).json({ error: "ชื่อนี้ถูกใช้ไปแล้ว" });
         res.json({ message: "Success" });
@@ -32,14 +31,12 @@ app.post('/api/signin', (req, res) => {
     });
 });
 
-// ดึงข้อมูล User เพื่อไปแสดงในช่อง Edit
 app.get('/api/user-info/:userId', (req, res) => {
     connection.query("SELECT username, password, country FROM users WHERE id = ?", [req.params.userId], (err, result) => {
-        res.json(result[0]);
+        res.json(result[0] || {});
     });
 });
 
-// อัปเดตข้อมูลบัญชี
 app.post('/api/update-profile', (req, res) => {
     const { userId, newUsername, newPassword, newCountry } = req.body;
     connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], (err) => {
@@ -48,7 +45,7 @@ app.post('/api/update-profile', (req, res) => {
     });
 });
 
-// --- Game & Notes APIs ---
+// --- Game & Stats ---
 app.post('/api/save', (req, res) => {
     const { userId, level, exp, totalNotes } = req.body;
     const sql = "INSERT INTO game_stats (user_id, level, exp, total_notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, exp = ?, total_notes = ?";
@@ -69,18 +66,24 @@ app.get('/api/leaderboard', (req, res) => {
     connection.query(sql, (err, result) => res.json(err ? [] : result));
 });
 
+// --- Notes APIs ---
 app.post('/api/notes/add', (req, res) => {
     const { userId, content } = req.body;
     connection.query("INSERT INTO notes (user_id, content) VALUES (?, ?)", [userId, content], () => res.json({ success: true }));
 });
 
 app.get('/api/notes/global', (req, res) => {
-    const sql = "SELECT n.content, u.username FROM notes n JOIN users u ON n.user_id = u.id ORDER BY n.created_at DESC LIMIT 50";
+    const sql = "SELECT n.id, n.content, u.username FROM notes n JOIN users u ON n.user_id = u.id ORDER BY n.created_at DESC LIMIT 50";
     connection.query(sql, (err, result) => res.json(result));
 });
 
 app.get('/api/notes/user/:userId', (req, res) => {
-    connection.query("SELECT content FROM notes WHERE user_id = ? ORDER BY created_at DESC", [req.params.userId], (err, result) => res.json(result));
+    connection.query("SELECT id, content FROM notes WHERE user_id = ? ORDER BY created_at DESC", [req.params.userId], (err, result) => res.json(result));
+});
+
+app.post('/api/notes/delete', (req, res) => {
+    const { noteId, userId } = req.body;
+    connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
 });
 
 const PORT = process.env.PORT || 8080;
