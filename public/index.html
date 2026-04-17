@@ -1,7 +1,57 @@
 <!DOCTYPE html>
-<html>
-<head><title>My Cloud Game</title></head>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>My Cloud Tree Game</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #e0f2f1; padding-top: 50px; }
+        .game-container { background: white; padding: 30px; border-radius: 20px; display: inline-block; shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #tree-display { font-size: 100px; margin: 20px; }
+        button { background-color: #4caf50; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .stats { margin-top: 20px; font-size: 20px; color: #333; }
+    </style>
+</head>
 <body>
-    <h1>ยินดีด้วย! ระบบ Cloud ของคุณทำงานแล้ว</h1>
+    <div class="game-container">
+        <h1>ต้นไม้ของฉันบน Cloud</h1>
+        <div id="tree-display">🌱</div>
+        <div class="stats">เลเวล: <span id="level">1</span> | Exp: <span id="exp">0</span></div>
+        <br>
+        <button onclick="clickTree()">รดน้ำต้นไม้ 💧</button>
+        <p id="status-msg">ลองรดน้ำเพื่อเก็บ Exp ดูสิ!</p>
+    </div>
+
+    <script>
+        let exp = 0;
+        let level = 1;
+        const trees = ['🌱', '🌿', '🌳', '🌲', '✨🌳✨'];
+
+        function clickTree() {
+            exp += 10;
+            if (exp >= 50) {
+                exp = 0;
+                level++;
+                updateTreeIcon();
+            }
+            document.getElementById('exp').innerText = exp;
+            document.getElementById('level').innerText = level;
+            saveData(); // ฟังก์ชันส่งข้อมูลไป Cloud
+        }
+
+        function updateTreeIcon() {
+            let iconIndex = Math.min(level - 1, trees.length - 1);
+            document.getElementById('tree-display').innerText = trees[iconIndex];
+        }
+
+        async function saveData() {
+            // โค้ดส่วนนี้จะส่งข้อมูลไปบันทึกที่ Database ของ Railway
+            await fetch('/api/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ level: level, exp: exp })
+            });
+        }
+    </script>
 </body>
 </html>

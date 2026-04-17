@@ -27,6 +27,23 @@ app.get('/api/hello', (req, res) => {
 
 // 4. สั่งให้ Server เริ่มทำงาน
 const PORT = process.env.PORT || 8080;
+
+// เพิ่มส่วนนี้เข้าไปใน index.js (ก่อนบรรทัด app.listen)
+
+// API สำหรับบันทึกคะแนนลง Database
+app.post('/api/save', (req, res) => {
+    const { level, exp } = req.body;
+    const sql = "INSERT INTO game_stats (user_id, level, exp) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE level = ?, exp = ?";
+    
+    connection.query(sql, [level, exp, level, exp], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Database Error" });
+        }
+        res.json({ message: "Saved!" });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
