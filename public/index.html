@@ -27,6 +27,17 @@
         let level = 1;
         const trees = ['🌱', '🌿', '🌳', '🌲', '✨🌳✨'];
 
+        window.onload = async function() {
+        const response = await fetch('/api/load');
+        const data = await response.json();
+        level = data.level;
+        exp = data.exp;
+        document.getElementById('level').innerText = level;
+        document.getElementById('exp').innerText = exp;
+        updateTreeIcon();
+        document.getElementById('status-msg').innerText = "โหลดข้อมูลล่าสุดเรียบร้อย!";
+    };
+    
         function clickTree() {
             exp += 10;
             if (exp >= 50) {

@@ -25,6 +25,22 @@ app.get('/api/hello', (req, res) => {
     res.json({ message: "Hello from Cloud Server!", status: "Connected" });
 });
 
+// API สำหรับดึงคะแนนล่าสุดจาก Database
+app.get('/api/load', (req, res) => {
+    const sql = "SELECT level, exp FROM game_stats WHERE user_id = 1";
+    connection.query(sql, (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Database Error" });
+        }
+        if (result.length > 0) {
+            res.json(result[0]); // ส่งข้อมูลเลเวลและ exp กลับไปที่หน้าเว็บ
+        } else {
+            res.json({ level: 1, exp: 0 }); // ถ้ายังไม่มีข้อมูล ให้เริ่มที่เลเวล 1
+        }
+    });
+});
+
 // 4. สั่งให้ Server เริ่มทำงาน
 const PORT = process.env.PORT || 8080;
 
