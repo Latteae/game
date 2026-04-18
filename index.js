@@ -1,108 +1,73 @@
-const express = require('express');
-const mysql = require('mysql2');
-const path = require('path');
-require('dotenv').config();
+// จำลองสถานะ Login (ในการใช้งานจริงให้เช็คจาก Token หรือ Session)
+let currentUser = null; 
+let allNotes = []; // ข้อมูลโน๊ตจาก Database
 
-const app = express();
-const connection = mysql.createConnection(process.env.DATABASE_URL || process.env.MYSQL_URL);
+function updateUI() {
+    const authContent = document.getElementById('authContent');
+    const writeBtn = document.getElementById('writeNoteAction');
+    const noteCountTitle = document.getElementById('noteCountDisplay');
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+    if (!currentUser) {
+        // --- กรณีที่ยังไม่เข้าสู่ระบบ ---
+        writeBtn.innerHTML = 'Sign In to write a note ⮕';
+        writeBtn.style.backgroundColor = '#95a5a6';
+        writeBtn.onclick = () => {
+            document.getElementById('sidebar').classList.add('active');
+        };
+        
+        noteCountTitle.innerText = `จำนวนโน๊ตทั้งหมด: ${allNotes.length}`;
 
-// --- Auth ---
-app.post('/api/signin', (req, res) => {
-    const { username, password } = req.body;
-    connection.query("SELECT id FROM users WHERE username = ? AND password = ?", [username, password], (err, result) => {
-        if (result.length > 0) res.json({ userId: result[0].id });
-        else res.status(401).json({ error: "Fail" });
-    });
-});
+        authContent.innerHTML = `
+            <h3 style="margin-top:0">Sign In / Sign Up</h3>
+            <p style="font-size:0.8rem; color:#888;">กรุณาเข้าสู่ระบบเพื่อเริ่มเขียนโน๊ต</p>
+            <input type="text" id="userIn" class="auth-input" placeholder="Username">
+            <input type="password" id="passIn" class="auth-input" placeholder="Password">
+            <button class="btn-auth" onclick="handleLogin()">เข้าสู่ระบบ / สมัครสมาชิก</button>
+            <hr style="border:0; border-top:1px solid var(--border-cream); margin:20px 0;">
+            <p style="font-size:0.8rem; text-align:center;">⮕ จัดการบัญชีได้ที่เมนูนี้</p>
+        `;
+    } else {
+        // --- กรณีที่เข้าสู่ระบบแล้ว (สมมติชื่อ Latte) ---
+        writeBtn.innerHTML = '✍️ เขียนโน๊ต';
+        writeBtn.style.backgroundColor = '#3498db';
+        writeBtn.onclick = () => openNoteModal(); // ฟังก์ชันเปิดหน้าเขียนโน๊ตเดิมของคุณ
+        
+        // แสดงชื่อผู้ใช้ผสมกับจำนวนโน๊ต
+        const userNotes = allNotes.filter(n => n.username === currentUser.username);
+        noteCountTitle.innerText = `${currentUser.username}'s Notes : ${userNotes.length}`;
 
-app.post('/api/signup', (req, res) => {
-    const { username, password, country } = req.body;
-    connection.query("INSERT INTO users (username, password, country) VALUES (?, ?, ?)", [username, password, country], (err) => {
-        if (err) return res.status(400).json({ error: "Error" });
-        res.json({ message: "Success" });
-    });
-});
+        authContent.innerHTML = `
+            <h3 style="margin-top:0">แก้ไขโปรไฟล์</h3>
+            <div class="user-info">
+                <label style="font-size:0.8rem;">ชื่อผู้ใช้</label>
+                <input type="text" id="editName" class="auth-input" value="${currentUser.username}">
+                <label style="font-size:0.8rem;">รหัสผ่านใหม่ (ปล่อยว่างถ้าไม่เปลี่ยน)</label>
+                <input type="password" id="editPass" class="auth-input" placeholder="*****">
+                <button class="btn-auth" onclick="saveProfile()">บันทึกการเปลี่ยนแปลง</button>
+                <button class="btn-auth" style="background:var(--accent-red); margin-top:10px;" onclick="handleLogout()">ออกจากระบบ</button>
+            </div>
+        `;
+    }
+}
 
-// --- Notes System ---
-app.get('/api/notes', (req, res) => {
-    const { type, userId, sort } = req.query;
-    let orderBy = "n.created_at DESC";
-    if (sort === "oldest") orderBy = "n.created_at ASC";
-    else if (sort === "likes") orderBy = "n.likes DESC";
-    else if (sort === "random") orderBy = "RAND()";
+// ตัวอย่างฟังก์ชัน Login (ให้คุณนำไปเชื่อมกับ API ของคุณ)
+function handleLogin() {
+    const user = document.getElementById('userIn').value;
+    if(user) {
+        currentUser = { username: user, id: 1 }; // จำลองการ Login สำเร็จ
+        updateUI();
+        toggleSidebar(); // ปิด sidebar
+    }
+}
 
-    let sql = `
-        SELECT n.*, u.username, 
-        EXISTS(SELECT 1 FROM note_likes WHERE note_id = n.id AND user_id = ${mysql.escape(userId)}) as isLiked
-        FROM notes n 
-        JOIN users u ON n.user_id = u.id`;
-    
-    if (type === "user") sql += ` WHERE n.user_id = ${mysql.escape(userId)}`;
-    sql += ` ORDER BY ${orderBy} LIMIT 100`;
+function handleLogout() {
+    currentUser = null;
+    updateUI();
+    toggleSidebar();
+}
 
-    connection.query(sql, (err, result) => res.json(result));
-});
-
-app.post('/api/notes/add', (req, res) => {
-    const { userId, title, content } = req.body;
-    connection.query("INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)", [userId, title, content], () => res.json({ success: true }));
-});
-
-app.post('/api/notes/like', (req, res) => {
-    const { noteId, userId } = req.body;
-    connection.query("SELECT * FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId], (err, result) => {
-        if (result.length > 0) {
-            connection.query("DELETE FROM note_likes WHERE user_id = ? AND note_id = ?", [userId, noteId]);
-            connection.query("UPDATE notes SET likes = likes - 1 WHERE id = ?", [noteId]);
-            res.json({ liked: false });
-        } else {
-            connection.query("INSERT INTO note_likes (user_id, note_id) VALUES (?, ?)", [userId, noteId]);
-            connection.query("UPDATE notes SET likes = likes + 1 WHERE id = ?", [noteId]);
-            res.json({ liked: true });
-        }
-    });
-});
-
-app.post('/api/notes/delete', (req, res) => {
-    const { noteId, userId } = req.body;
-    connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
-});
-
-// --- Leaderboard (นับจำนวนโน๊ตสดๆ จากตาราง notes) ---
-app.get('/api/leaderboard', (req, res) => {
-    const { filter } = req.query;
-    let orderBy = "(notes_count * 5 + IFNULL(sum_likes.total,0)) DESC";
-    if (filter === "notes") orderBy = "notes_count DESC";
-    else if (filter === "likes") orderBy = "IFNULL(sum_likes.total,0) DESC";
-
-    const sql = `
-        SELECT u.username, u.country, u.created_at, 
-               (SELECT COUNT(*) FROM notes WHERE user_id = u.id) as notes_count,
-               IFNULL(sum_likes.total, 0) as total_likes
-        FROM users u 
-        LEFT JOIN (SELECT user_id, SUM(likes) as total FROM notes GROUP BY user_id) sum_likes ON u.id = sum_likes.user_id
-        ORDER BY ${orderBy} LIMIT 50`;
-    connection.query(sql, (err, result) => res.json(result));
-});
-
-// --- User Stats (ดึงจำนวนโน๊ตปัจจุบัน ไม่รวมที่ลบ) ---
-app.get('/api/load-stats/:userId', (req, res) => {
-    connection.query("SELECT COUNT(*) as total_notes FROM notes WHERE user_id = ?", [req.params.userId], (err, result) => {
-        res.json(result[0] || { total_notes: 0 });
-    });
-});
-
-app.get('/api/user-info/:userId', (req, res) => {
-    connection.query("SELECT username, password, country FROM users WHERE id = ?", [req.params.userId], (err, result) => res.json(result[0] || {}));
-});
-
-app.post('/api/update-profile', (req, res) => {
-    const { userId, newUsername, newPassword, newCountry } = req.body;
-    connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], () => res.json({success: true}));
-});
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server started on ${PORT}`));
+// รันครั้งแรกเมื่อโหลดหน้า
+window.onload = () => {
+    // โหลดโน๊ตจาก API แล้วค่อยสั่ง updateUI
+    updateUI();
+};
