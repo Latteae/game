@@ -101,7 +101,29 @@ app.get('/api/user-info/:userId', (req, res) => {
 
 app.post('/api/update-profile', (req, res) => {
     const { userId, newUsername, newPassword, newCountry } = req.body;
-    connection.query("UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?", [newUsername, newPassword, newCountry, userId], () => res.json({success: true}));
+
+    // เช็คก่อนว่าชื่อผู้ใช้ใหม่ที่ต้องการเปลี่ยนนี้ มีคนอื่น (ที่ ID ไม่ใช่ของเรา) ใช้งานอยู่หรือยัง
+    const checkQuery = 'SELECT id FROM users WHERE username = ? AND id != ?';
+    
+    db.query(checkQuery, [newUsername, userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        // 2. ถ้า Query แล้วเจอข้อมูล แปลว่าชื่อนี้มีคนใช้ไปแล้ว
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'ชื่อผู้ใช้นี้มีคนใช้แล้ว กรุณาใช้ชื่ออื่น' });
+        }
+
+        // 3. ถ้าไม่ซ้ำ ก็ทำการอัปเดตข้อมูลตามปกติ
+        const updateQuery = 'UPDATE users SET username = ?, password = ?, country = ? WHERE id = ?';
+        db.query(updateQuery, [newUsername, newPassword, newCountry, userId], (err2) => {
+            if (err2) {
+                return res.status(500).json({ error: 'Failed to update profile' });
+            }
+            res.json({ success: true, message: 'Profile updated' });
+        });
+    });
 });
 
 const PORT = process.env.PORT || 8080;
