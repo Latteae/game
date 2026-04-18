@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Record of taking Notes</title>
     <style>
-        :root { --bg: #f5f6fa; --text: #2f3640; --box: #ffffff; --border: #dcdde1; --accent: #27ae60; --danger: #e74c3c; --nav-h: 60px; }
+        :root { --bg: #f5f6fa; --text: #2f3640; --box: #ffffff; --border: #dcdde1; --accent: #27ae60; --danger: #e74c3c; --cancel: #7f8c8d; --nav-h: 60px; }
         body.dark-mode { --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
@@ -62,22 +62,18 @@
         </div>
 
         <div id="game-section" style="width: 100%; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div id="stats-bar" style="margin-top: 15px; font-weight: bold; font-size: 18px; display:none;">
-                </div>
-            
+            <div id="stats-bar" style="margin-top: 15px; font-weight: bold; font-size: 18px; display:none;"></div>
             <select id="note-sort" onchange="fetchNotes()" style="margin-top: 10px; width: 200px; padding: 5px;">
                 <option value="latest" id="txt-sort-latest">ล่าสุด</option>
                 <option value="oldest" id="txt-sort-oldest">เก่าสุด</option>
                 <option value="likes" id="txt-sort-likes">ไลค์เยอะสุด</option>
                 <option value="random" id="txt-sort-random">สุ่ม</option>
             </select>
-
             <div id="notes-container"></div>
         </div>
     </div>
 
     <div id="side" class="sidebar">
-        
         <div id="sidebar-guest" style="display:none;">
             <h2 id="txt-auth-title" style="text-align:center;">เข้าสู่ระบบ</h2>
             <div id="login-box">
@@ -113,10 +109,14 @@
             <input type="text" id="edit-user">
             <input type="password" id="edit-pass">
             <select id="edit-country"></select>
-            <button id="txt-btn-save" onclick="updateProfile()" style="width:100%; padding:10px; background:var(--accent); color:white; margin-top:10px;">บันทึกการเปลี่ยนแปลง</button>
-            <button id="txt-btn-logout" onclick="logout()" style="background:var(--danger); width:100%; margin-top:10px; color:white; padding:10px;">ออกจากระบบ</button>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="txt-btn-save" onclick="updateProfile()" style="flex: 2; padding:10px; background:var(--accent); color:white;">บันทึก</button>
+                <button id="txt-btn-cancel" onclick="toggleSide()" style="flex: 1; padding:10px; background:var(--cancel); color:white;">ยกเลิก</button>
+            </div>
+            
+            <button id="txt-btn-logout" onclick="logout()" style="background:var(--danger); width:100%; margin-top:15px; color:white; padding:10px;">ออกจากระบบ</button>
         </div>
-
     </div>
 
     <div id="note-modal" class="modal">
@@ -132,10 +132,7 @@
     </div>
 
     <script>
-        let userId = localStorage.getItem('userId');
-        let usernameCache = ""; // เก็บชื่อ User ไว้แสดง
-        let currentTab = 'global';
-        let currentLang = 'th';
+        let userId = localStorage.getItem('userId'), usernameCache = "", currentTab = 'global', currentLang = 'th';
         const countries = ["Thailand 🇹🇭", "USA 🇺🇸", "Japan 🇯🇵", "Korea 🇰🇷", "China 🇨🇳"];
 
         const i18n = {
@@ -144,8 +141,8 @@
                 "txt-btn-signup": "สมัครสมาชิก", "txt-goto-login": "มีบัญชีแล้ว? เข้าสู่ระบบ",
                 "txt-btn-write": "📝 เขียนโน๊ต", "txt-sort-latest": "ล่าสุด", "txt-sort-oldest": "เก่าสุด",
                 "txt-sort-likes": "ไลค์เยอะสุด", "txt-sort-random": "สุ่ม", "txt-side-showlb": "แสดงสมาชิก", 
-                "txt-side-lang": "ภาษา", "txt-side-lang-guest": "ภาษา",
-                "txt-side-edit": "แก้ไขโปรไฟล์", "txt-btn-save": "บันทึกการเปลี่ยนแปลง", "txt-btn-logout": "ออกจากระบบ",
+                "txt-side-lang": "ภาษา", "txt-side-lang-guest": "ภาษา", "txt-side-edit": "แก้ไขโปรไฟล์", 
+                "txt-btn-save": "บันทึก", "txt-btn-cancel": "ยกเลิก", "txt-btn-logout": "ออกจากระบบ",
                 "txt-modal-title": "เขียนโน๊ตใหม่", "txt-btn-submit": "บันทึก", "txt-btn-close": "ปิด",
                 "txt-lb-title": "🏆 สมาชิก", "txt-lb-overall": "สมาชิกโดยรวม", "txt-lb-notes": "เน้นจำนวน Note", "txt-lb-likes": "เน้นจำนวน Like",
                 "msg-del": "ลบโน๊ตนี้?", "msg-save": "อัปเดตเรียบร้อย!"
@@ -155,8 +152,8 @@
                 "txt-btn-signup": "Sign Up", "txt-goto-login": "Have account? Sign in",
                 "txt-btn-write": "📝 Write Note", "txt-sort-latest": "Latest", "txt-sort-oldest": "Oldest",
                 "txt-sort-likes": "Most Liked", "txt-sort-random": "Random", "txt-side-showlb": "Show Members", 
-                "txt-side-lang": "Language", "txt-side-lang-guest": "Language",
-                "txt-side-edit": "Edit Profile", "txt-btn-save": "Save Changes", "txt-btn-logout": "Log Out",
+                "txt-side-lang": "Language", "txt-side-lang-guest": "Language", "txt-side-edit": "Edit Profile", 
+                "txt-btn-save": "Save", "txt-btn-cancel": "Cancel", "txt-btn-logout": "Log Out",
                 "txt-modal-title": "New Note", "txt-btn-submit": "Save", "txt-btn-close": "Close",
                 "txt-lb-title": "🏆 Members", "txt-lb-overall": "Overall Members", "txt-lb-notes": "By Notes", "txt-lb-likes": "By Likes",
                 "msg-del": "Delete this note?", "msg-save": "Updated!"
@@ -167,23 +164,18 @@
             const opt = countries.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('country-up').innerHTML = opt;
             document.getElementById('edit-country').innerHTML = opt;
-            
-            // เช็คว่า Login หรือยังเพื่อจัดหน้า Sidebar
             if(userId) {
                 document.getElementById('sidebar-user').style.display = 'block';
                 document.getElementById('sidebar-guest').style.display = 'none';
                 document.getElementById('tab-user').style.display = 'inline-block';
                 document.getElementById('btn-write-nav').style.display = 'inline-block';
                 document.getElementById('stats-bar').style.display = 'block';
-                loadEditInfo(); // โหลดข้อมูล Profile + อัปเดตยอดโน๊ตที่มีชื่อผู้ใช้
+                loadEditInfo();
             } else {
                 document.getElementById('sidebar-user').style.display = 'none';
                 document.getElementById('sidebar-guest').style.display = 'block';
             }
-
-            setLang('th');
-            fetchNotes();
-            fetchLB();
+            setLang('th'); fetchNotes(); fetchLB();
         };
 
         function setLang(lang) {
@@ -192,7 +184,7 @@
                 const el = document.getElementById(key);
                 if(el) el.innerText = i18n[lang][key];
             }
-            if(userId) updateStats(); // อัปเดตข้อความ "จำนวนโน๊ตของ..." ตามภาษา
+            if(userId) updateStats();
             if(userId) fetchNotes(); 
         }
 
@@ -200,24 +192,19 @@
             if(!userId || !usernameCache) return;
             const res = await fetch(`/api/load-stats/${userId}`);
             const data = await res.json();
-            
             const statsBar = document.getElementById('stats-bar');
-            // เปลี่ยนข้อความเป็นแบบไดนามิกตามชื่อผู้ใช้
-            if(currentLang === 'th') {
-                statsBar.innerHTML = `จำนวนโน๊ตของ ${usernameCache} : <span style="color:var(--accent)">${data.total_notes}</span>`;
-            } else {
-                statsBar.innerHTML = `${usernameCache}'s Notes : <span style="color:var(--accent)">${data.total_notes}</span>`;
-            }
+            if(currentLang === 'th') statsBar.innerHTML = `จำนวนโน๊ตของ ${usernameCache} : <span style="color:var(--accent)">${data.total_notes}</span>`;
+            else statsBar.innerHTML = `${usernameCache}'s Notes : <span style="color:var(--accent)">${data.total_notes}</span>`;
         }
 
         async function loadEditInfo() { 
             const res = await fetch(`/api/user-info/${userId}`); 
             const d = await res.json(); 
-            usernameCache = d.username; // เก็บชื่อไว้ใช้
+            usernameCache = d.username;
             document.getElementById('edit-user').value = d.username; 
             document.getElementById('edit-pass').value = d.password; 
             document.getElementById('edit-country').value = d.country; 
-            updateStats(); // โหลดชื่อเสร็จค่อยอัปเดตสถิติ
+            updateStats();
         }
 
         async function fetchNotes() {
@@ -241,18 +228,14 @@
             const content = document.getElementById('note-input').value.trim();
             if(!content) return;
             await fetch('/api/notes/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, title, content}) });
-            document.getElementById('note-title-input').value = "";
-            document.getElementById('note-input').value = "";
-            closeModal('note-modal');
-            await updateStats();
-            fetchNotes();
+            document.getElementById('note-title-input').value = ""; document.getElementById('note-input').value = "";
+            closeModal('note-modal'); await updateStats(); fetchNotes();
         }
 
         async function deleteNote(id) {
             if(confirm(i18n[currentLang]["msg-del"])) {
                 await fetch('/api/notes/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) });
-                await updateStats();
-                fetchNotes();
+                await updateStats(); fetchNotes();
             }
         }
 
@@ -267,13 +250,9 @@
             const res = await fetch(`/api/leaderboard?filter=${f}`);
             const data = await res.json();
             document.getElementById('rank-list').innerHTML = data.map((r, i) => `
-                <div class="lb-item">
-                    <b>#${i+1} ${r.username}</b><br>
-                    <div class="lb-meta">${r.country} | 📝 ${r.notes_count} | ❤️ ${r.total_likes}</div>
-                </div>`).join('');
+                <div class="lb-item"><b>#${i+1} ${r.username}</b><br><div class="lb-meta">${r.country} | 📝 ${r.notes_count} | ❤️ ${r.total_likes}</div></div>`).join('');
         }
 
-        // --- Auth & UI Functions ---
         function toggleTheme() { document.body.classList.toggle('dark-mode'); }
         function toggleAuth(p) { 
             document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none'; 
@@ -286,27 +265,15 @@
             const p = document.getElementById(type === 'signin' ? 'pass-in' : 'pass-up').value;
             const c = type === 'signup' ? document.getElementById('country-up').value : '';
             if(!u || !p) return;
-
             const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, country:c}) });
-            if (res.ok) { 
-                if(type === 'signin') { 
-                    userId = (await res.json()).userId; 
-                    localStorage.setItem('userId', userId); 
-                    location.reload(); // รีเฟรชหน้าเพื่อให้เข้าสู่โหมด User อย่างสมบูรณ์
-                } else { 
-                    toggleAuth('signin'); 
-                    alert(currentLang === 'th' ? 'สมัครสำเร็จ! กรุณาเข้าสู่ระบบ' : 'Success! Please Sign In.');
-                } 
-            } else {
-                alert('เกิดข้อผิดพลาด / Error');
-            }
+            if (res.ok) { if(type === 'signin') { userId = (await res.json()).userId; localStorage.setItem('userId', userId); location.reload(); } else { toggleAuth('signin'); alert(currentLang === 'th' ? 'สมัครสำเร็จ!' : 'Success!'); } } 
+            else alert('Error');
         }
 
         function toggleSide() { document.getElementById('side').classList.toggle('active'); }
         async function updateProfile() { 
             await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); 
-            alert(i18n[currentLang]["msg-save"]); 
-            loadEditInfo(); 
+            alert(i18n[currentLang]["msg-save"]); loadEditInfo(); toggleSide();
         }
         function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
         function logout() { localStorage.removeItem('userId'); location.reload(); }
