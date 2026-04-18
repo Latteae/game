@@ -9,18 +9,22 @@
         body.dark-mode { --bg: #1e272e; --text: #d2dae2; --box: #2f3640; --border: #485460; --accent: #44bd32; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
+        /* Leaderboard Side */
         #leaderboard { width: 320px; background: var(--box); border-right: 1px solid var(--border); padding: 15px; overflow-y: auto; display: none; }
         .lb-item { border-bottom: 1px solid var(--border); padding: 10px 0; font-size: 13px; }
         .lb-meta { font-size: 10px; color: #888; }
 
+        /* Main Section */
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
         .nav { width: 100%; height: var(--nav-h); background: var(--box); display: flex; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
         .tab-btn { background: none; border: none; padding: 0 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 4px solid transparent; height: 100%; transition: 0.2s; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
+        /* Sidebar */
         .sidebar { position: fixed; right: -350px; top: var(--nav-h); width: 300px; height: calc(100% - var(--nav-h)); background: var(--box); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 90; border-top: 1px solid var(--border); overflow-y: auto; }
         .sidebar.active { right: 0; }
         
+        /* Notes Style */
         #notes-container { width: 90%; max-width: 800px; margin-top: 15px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         .note-card { background: var(--box); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .note-title { font-weight: bold; font-size: 16px; color: var(--text); margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
@@ -31,6 +35,7 @@
         .like-btn.liked { background: #ff4757; color: white; }
         .like-btn.unliked { color: #ff4757; background: transparent; }
 
+        /* Modal & Buttons */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
         .box { background: var(--box); padding: 25px; border-radius: 12px; text-align: center; width: 400px; }
         input, select, textarea { width: 92%; padding: 10px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-family: inherit; }
@@ -112,17 +117,10 @@
                 <button onclick="setLang('th')">TH</button> | <button onclick="setLang('en')">EN</button>
             </div>
 
-            <h4 id="txt-side-edit">แก้ไขโปรไฟล์</h4>
-            <input type="text" id="edit-user">
-            <input type="password" id="edit-pass">
-            <select id="edit-country"></select>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
             
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button id="txt-btn-save" onclick="updateProfile()" style="flex: 2; padding:10px; background:var(--accent); color:white;">บันทึก</button>
-                <button id="txt-btn-cancel" onclick="toggleSide()" style="flex: 1; padding:10px; background:var(--cancel); color:white;">ยกเลิก</button>
-            </div>
-            
-            <button id="txt-btn-logout" onclick="logout()" style="background:var(--danger); width:100%; margin-top:15px; color:white; padding:10px;">ออกจากระบบ</button>
+            <button id="txt-btn-del-acc" onclick="deleteAccount()" style="background:var(--danger); width:100%; color:white; padding:10px; margin-bottom:10px;">ลบบัญชีผู้ใช้</button>
+            <button id="txt-btn-logout" onclick="logout()" style="background:var(--cancel); width:100%; color:white; padding:10px;">ออกจากระบบ</button>
         </div>
     </div>
 
@@ -148,8 +146,8 @@
                 "txt-btn-signup": "สมัครสมาชิก", "txt-goto-login": "มีบัญชีแล้ว? เข้าสู่ระบบ",
                 "txt-btn-write": "📝 เขียนโน๊ต", "txt-sort-latest": "ล่าสุด", "txt-sort-oldest": "เก่าสุด",
                 "txt-sort-likes": "ไลค์เยอะสุด", "txt-sort-random": "สุ่ม", "txt-side-showlb": "แสดงสมาชิก", 
-                "txt-side-lang": "ภาษา", "txt-side-lang-guest": "ภาษา", "txt-side-edit": "แก้ไขโปรไฟล์", 
-                "txt-btn-save": "บันทึก", "txt-btn-cancel": "ยกเลิก", "txt-btn-logout": "ออกจากระบบ",
+                "txt-side-lang": "ภาษา", "txt-side-lang-guest": "ภาษา", "txt-btn-logout": "ออกจากระบบ",
+                "txt-btn-del-acc": "ลบบัญชีผู้ใช้", "msg-del-acc": "คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี? โน๊ตทั้งหมดจะหายไปถาวร!",
                 "txt-modal-title": "เขียนโน๊ตใหม่", "txt-btn-submit": "บันทึก", "txt-btn-close": "ปิด",
                 "txt-lb-title": "🏆 สมาชิก", "txt-lb-overall": "สมาชิกโดยรวม", "txt-lb-notes": "เน้นจำนวน Note", "txt-lb-likes": "เน้นจำนวน Like",
                 "msg-del": "ลบโน๊ตนี้?", "msg-save": "อัปเดตเรียบร้อย!"
@@ -159,8 +157,8 @@
                 "txt-btn-signup": "Sign Up", "txt-goto-login": "Have account? Sign in",
                 "txt-btn-write": "📝 Write Note", "txt-sort-latest": "Latest", "txt-sort-oldest": "Oldest",
                 "txt-sort-likes": "Most Liked", "txt-sort-random": "Random", "txt-side-showlb": "Show Members", 
-                "txt-side-lang": "Language", "txt-side-lang-guest": "Language", "txt-side-edit": "Edit Profile", 
-                "txt-btn-save": "Save", "txt-btn-cancel": "Cancel", "txt-btn-logout": "Log Out",
+                "txt-side-lang": "Language", "txt-side-lang-guest": "Language", "txt-btn-logout": "Log Out",
+                "txt-btn-del-acc": "Delete Account", "msg-del-acc": "Are you sure? All notes will be permanently deleted!",
                 "txt-modal-title": "New Note", "txt-btn-submit": "Save", "txt-btn-close": "Close",
                 "txt-lb-title": "🏆 Members", "txt-lb-overall": "Overall Members", "txt-lb-notes": "By Notes", "txt-lb-likes": "By Likes",
                 "msg-del": "Delete this note?", "msg-save": "Updated!"
@@ -170,14 +168,13 @@
         window.onload = () => {
             const opt = countries.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('country-up').innerHTML = opt;
-            document.getElementById('edit-country').innerHTML = opt;
             if(userId) {
                 document.getElementById('sidebar-user').style.display = 'block';
                 document.getElementById('sidebar-guest').style.display = 'none';
                 document.getElementById('tab-user').style.display = 'inline-block';
                 document.getElementById('btn-write-nav').style.display = 'inline-block';
                 document.getElementById('stats-bar').style.display = 'block';
-                loadEditInfo();
+                fetchUserInfo();
             } else {
                 document.getElementById('sidebar-user').style.display = 'none';
                 document.getElementById('sidebar-guest').style.display = 'block';
@@ -185,49 +182,25 @@
             setLang('th'); fetchNotes(); fetchLB();
         };
 
-        function toggleSide() { 
-            const side = document.getElementById('side');
-            const isActive = side.classList.contains('active');
-            if (!isActive) {
-                if(userId) loadEditInfo(); 
-                side.classList.add('active'); 
-            } else {
-                side.classList.remove('active'); 
-            }
-        }
-
-        async function loadEditInfo() { 
+        async function fetchUserInfo() {
             if(!userId) return;
-            const res = await fetch(`/api/user-info/${userId}`); 
-            const d = await res.json(); 
+            const res = await fetch(`/api/user-info/${userId}`);
+            const d = await res.json();
             usernameCache = d.username;
-            document.getElementById('edit-user').value = d.username; 
-            document.getElementById('edit-pass').value = d.password; 
-            document.getElementById('edit-country').value = d.country; 
             updateStats();
         }
 
-        // เพิ่มการดักจับ Error กรณีชื่อซ้ำ
-        async function updateProfile() { 
-            const res = await fetch('/api/update-profile', { 
-                method: 'POST', 
-                headers: {'Content-Type':'application/json'}, 
-                body: JSON.stringify({
-                    userId, 
-                    newUsername: document.getElementById('edit-user').value, 
-                    newPassword: document.getElementById('edit-pass').value, 
-                    newCountry: document.getElementById('edit-country').value
-                }) 
-            }); 
-            
-            if(res.ok) {
-                alert(i18n[currentLang]["msg-save"]); 
-                await loadEditInfo(); 
-                toggleSide(); // ปิด Sidebar เมื่อสำเร็จ
-            } else {
-                // แจ้งเตือนเมื่อเกิด Error (เช่น ชื่อผู้ใช้ซ้ำ) โดยไม่ปิด Sidebar
-                const errData = await res.json();
-                alert(errData.error || "เกิดข้อผิดพลาดในการบันทึก / Error saving profile");
+        async function deleteAccount() {
+            if(confirm(i18n[currentLang]["msg-del-acc"])) {
+                const res = await fetch('/api/delete-account', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ userId })
+                });
+                if(res.ok) {
+                    alert(currentLang === 'th' ? 'ลบบัญชีเรียบร้อย' : 'Account Deleted');
+                    logout();
+                }
             }
         }
 
@@ -255,8 +228,6 @@
             const sort = document.getElementById('note-sort').value;
             const res = await fetch(`/api/notes?type=${currentTab}&userId=${userId || 0}&sort=${sort}`);
             const data = await res.json();
-            
-            // เพิ่มการแสดงผล ID ของโน๊ตไว้ที่มุมขวาบนของ Card
             document.getElementById('notes-container').innerHTML = data.map(n => `
                 <div class="note-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -307,6 +278,13 @@
         }
 
         function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+        function toggleSide() { document.getElementById('side').classList.toggle('active'); }
+        function logout() { localStorage.removeItem('userId'); location.reload(); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; if(document.getElementById('show-lb').checked) fetchLB(); }
+        function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
+        
         function toggleAuth(p) { 
             document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none'; 
             document.getElementById('signup-box').style.display = p === 'signup' ? 'block' : 'none'; 
@@ -324,12 +302,6 @@
                 else { toggleAuth('signin'); alert(currentLang === 'th' ? 'สมัครสำเร็จ!' : 'Success!'); } 
             } else alert('Error');
         }
-
-        function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
-        function logout() { localStorage.removeItem('userId'); location.reload(); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleLB() { document.getElementById('leaderboard').style.display = document.getElementById('show-lb').checked ? 'block' : 'none'; if(document.getElementById('show-lb').checked) fetchLB(); }
     </script>
 </body>
 </html>
