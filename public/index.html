@@ -30,6 +30,7 @@
         .note-title { font-weight: bold; font-size: 16px; color: var(--text); margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
         .note-content { white-space: pre-wrap; font-size: 14px; color: var(--text); line-height: 1.5; }
         .note-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
+        .note-id { position: absolute; top: 10px; right: 15px; font-size: 10px; color: #aaa; font-weight: bold; }
         
         .like-btn { cursor: pointer; padding: 5px 12px; border-radius: 20px; border: 1px solid #ff4757; transition: 0.2s; font-weight: bold; }
         .like-btn.liked { background: #ff4757; color: white; }
@@ -190,17 +191,13 @@
             setLang('th'); fetchNotes(); fetchLB();
         };
 
-        // ฟังก์ชันปิด/เปิด Sidebar พร้อม Reset ข้อมูล
         function toggleSide() { 
             const side = document.getElementById('side');
             const isActive = side.classList.contains('active');
-
             if (!isActive) {
-                // ถ้ากำลังจะเปิด: โหลดข้อมูลจริงมาใส่ในช่อง Input เพื่อล้างค่าที่เคยพิมพ์ค้างไว้
                 if(userId) loadEditInfo(); 
                 side.classList.add('active'); 
             } else {
-                // ถ้ากำลังจะปิด: ปิดหน้าต่างเฉยๆ (ค่าจะถูก Reset เมื่อเปิดใหม่)
                 side.classList.remove('active'); 
             }
         }
@@ -234,7 +231,6 @@
             }
         }
 
-        // --- ฟังก์ชันเสริมอื่นๆ ---
         function setLang(lang) {
             currentLang = lang;
             for(let key in i18n[lang]) {
@@ -261,6 +257,7 @@
             const data = await res.json();
             document.getElementById('notes-container').innerHTML = data.map(n => `
                 <div class="note-card">
+                    <span class="note-id">ID: ${n.id}</span>
                     <div style="font-size:11px; color:var(--accent); font-weight:bold;">@${n.username}</div>
                     ${n.title ? `<div class="note-title">${n.title}</div>` : ''}
                     <div class="note-content">${n.content}</div>
