@@ -20,27 +20,42 @@ app.post('/api/signin', (req, res) => {
 
 app.post('/api/signup', (req, res) => {
     const { username, password, country } = req.body;
+    // การ INSERT แบบนี้ MySQL จะรัน AUTO_INCREMENT ต่อไปเรื่อยๆ ไม่ซ้ำเลขเดิมที่เคยลบไป
     connection.query("INSERT INTO users (username, password, country) VALUES (?, ?, ?)", [username, password, country], (err) => {
         if (err) return res.status(400).json({ error: "Error" });
         res.json({ message: "Success" });
     });
 });
 
-// --- ระบบลบบัญชี (แทนที่การแก้ไขข้อมูล) ---
+// --- ระบบลบบัญชีแบบ Clean Data ---
 app.post('/api/delete-account', (req, res) => {
     const { userId } = req.body;
 
-    // 1. ลบ Note ทั้งหมดที่ผู้ใช้นี้เขียน (ป้องกัน Error Foreign Key)
-    connection.query("DELETE FROM notes WHERE user_id = ?", [userId], (err) => {
-        if (err) return res.status(500).json({ error: "Delete notes fail" });
+    // 1. ลดจำนวน Like ในตาราง notes ที่ผู้ใช้คนนี้เคยไปกด Like ไว้ (เพื่อให้จำนวน Like รวมของคนอื่นไม่ค้าง)
+    const updateOthersLikes = `
+        UPDATE notes 
+        SET likes = likes - 1 
+        WHERE id IN (SELECT note_id FROM note_likes WHERE user_id = ?)
+    `;
 
-        // 2. ลบข้อมูลการ Like ที่ผู้ใช้นี้เคยไปกดไว้
-        connection.query("DELETE FROM note_likes WHERE user_id = ?", [userId], () => {
+    connection.query(updateOthersLikes, [userId], () => {
+        
+        // 2. ลบข้อมูลการ Like ทั้งหมด (ทั้งที่เรากดคนอื่น และคนอื่นมากดโน๊ตเรา)
+        const deleteLikesRef = `
+            DELETE FROM note_likes 
+            WHERE user_id = ? OR note_id IN (SELECT id FROM notes WHERE user_id = ?)
+        `;
+        
+        connection.query(deleteLikesRef, [userId, userId], () => {
             
-            // 3. ลบบัญชีผู้ใช้
-            connection.query("DELETE FROM users WHERE id = ?", [userId], (err2) => {
-                if (err2) return res.status(500).json({ error: "Delete user fail" });
-                res.json({ success: true, message: "Account Deleted" });
+            // 3. ลบ Note ทั้งหมดที่ผู้ใช้นี้สร้าง
+            connection.query("DELETE FROM notes WHERE user_id = ?", [userId], () => {
+                
+                // 4. ลบบัญชีผู้ใช้ (ID นี้จะถูกทำเครื่องหมายว่าใช้แล้ว และ MySQL จะไม่นำกลับมาใช้ซ้ำ)
+                connection.query("DELETE FROM users WHERE id = ?", [userId], (err) => {
+                    if (err) return res.status(500).json({ error: "Delete failed" });
+                    res.json({ success: true });
+                });
             });
         });
     });
@@ -88,7 +103,10 @@ app.post('/api/notes/like', (req, res) => {
 
 app.post('/api/notes/delete', (req, res) => {
     const { noteId, userId } = req.body;
-    connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
+    // ลบ Like ที่เคยมีใน Note นี้ออกด้วยก่อนลบ Note
+    connection.query("DELETE FROM note_likes WHERE note_id = ?", [noteId], () => {
+        connection.query("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], () => res.json({ success: true }));
+    });
 });
 
 // --- Leaderboard ---
@@ -108,7 +126,6 @@ app.get('/api/leaderboard', (req, res) => {
     connection.query(sql, (err, result) => res.json(result));
 });
 
-// --- User Stats ---
 app.get('/api/load-stats/:userId', (req, res) => {
     connection.query("SELECT COUNT(*) as total_notes FROM notes WHERE user_id = ?", [req.params.userId], (err, result) => {
         res.json(result[0] || { total_notes: 0 });
