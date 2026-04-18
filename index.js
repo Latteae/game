@@ -3,14 +3,16 @@ const mysql = require('mysql2');
 const path = require('path');
 const app = express();
 
-// ตั้งค่า MySQL Connection (ดึงจากตัวแปรของ Railway)
+// เชื่อมต่อ MySQL (ใช้ค่าจาก Railway)
 const pool = mysql.createPool(process.env.DATABASE_URL || process.env.MYSQL_URL);
 const db = pool.promise();
 
 app.use(express.json());
-app.use(express.static('public')); 
 
-// API สำหรับดึงโน๊ต (Public)
+// 1. ให้ Express รู้จักโฟลเดอร์ไฟล์หน้าเว็บก่อน
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 2. API สำหรับดึงโน๊ต (ต้องอยู่ข้างบน)
 app.get('/api/notes', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM notes ORDER BY created_at DESC');
@@ -20,8 +22,9 @@ app.get('/api/notes', async (req, res) => {
     }
 });
 
-// แก้ไขตรงนี้: เปลี่ยนจาก '*' เป็น '/(.*)' เพื่อป้องกัน PathError
-app.get('/(.*)', (req, res) => {
+// 3. แก้จุดที่พัง: ใช้ Regex /.*/ เพื่อดักจับทุก Path ที่เหลือ
+// สำคัญ: ห้ามมีเครื่องหมาย ' ' หรือ " " ครอบตัว /.*/ นะครับ
+app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
