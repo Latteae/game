@@ -13,14 +13,14 @@
         .lb-meta { font-size: 10px; color: #888; }
 
         #main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .nav { width: 100%; height: var(--nav-h); background: var(--box); display: none; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .nav { width: 100%; height: var(--nav-h); background: var(--box); display: flex; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
         .tab-btn { background: none; border: none; padding: 0 20px; cursor: pointer; color: var(--text); font-weight: bold; border-bottom: 4px solid transparent; height: 100%; }
         .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
         .sidebar { position: fixed; right: -350px; top: var(--nav-h); width: 300px; height: calc(100% - var(--nav-h)); background: var(--box); transition: 0.3s; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 90; border-top: 1px solid var(--border); overflow-y: auto; }
         .sidebar.active { right: 0; }
         
-        #notes-container { width: 90%; max-width: 800px; margin-top: 15px; overflow-y: auto; flex-grow: 1; }
+        #notes-container { width: 90%; max-width: 800px; margin-top: 15px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         .note-card { background: var(--box); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); position: relative; }
         .note-title { font-weight: bold; font-size: 16px; color: var(--text); margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
         .note-content { white-space: pre-wrap; font-size: 14px; color: var(--text); }
@@ -39,9 +39,9 @@
 <body>
 
     <div id="leaderboard">
-        <h3 id="txt-lb-title" style="color: var(--accent)">🏆 อันดับ</h3>
+        <h3 id="txt-lb-title" style="color: var(--accent)">🏆 สมาชิก</h3>
         <select id="lb-filter" onchange="fetchLB()" style="width: 100%; padding: 5px; margin-bottom: 10px;">
-            <option value="overall" id="txt-lb-overall">อันดับโดยรวม</option>
+            <option value="overall" id="txt-lb-overall">สมาชิกโดยรวม</option>
             <option value="notes" id="txt-lb-notes">เน้นจำนวน Note</option>
             <option value="likes" id="txt-lb-likes">เน้นจำนวน Like</option>
         </select>
@@ -51,39 +51,19 @@
     <div id="main">
         <div class="nav" id="game-nav">
             <button id="tab-global" class="tab-btn active" onclick="setTab('global')">Notes</button>
-            <button id="tab-user" class="tab-btn" onclick="setTab('user')">Your Notes</button>
+            <button id="tab-user" class="tab-btn" onclick="setTab('user')" style="display:none;">Your Notes</button>
             <div style="position: absolute; right: 20px; display: flex; align-items: center;">
                 <button onclick="toggleTheme()" style="background:#f39c12; margin-right: 5px; color:white; padding:8px;">🌓</button>
-                <button id="txt-btn-write" onclick="openModal('note-modal')" style="background:#2980b9; margin-right: 15px; color:white; padding:8px 15px;">📝 เขียนโน๊ต</button>
+                <button id="btn-write-nav" onclick="openModal('note-modal')" style="background:#2980b9; margin-right: 15px; color:white; padding:8px 15px; display:none;">
+                    <span id="txt-btn-write">📝 เขียนโน๊ต</span>
+                </button>
                 <div style="font-size: 24px; cursor: pointer;" onclick="toggleSide()">☰</div>
             </div>
         </div>
 
-        <div id="auth-section">
-            <div style="position: absolute; top: 20px; right: 20px;">
-                <button onclick="setLang('th')">TH</button> | <button onclick="setLang('en')">EN</button>
-            </div>
-            <div id="login-box" class="box" style="margin-top: 100px;">
-                <h2 id="txt-auth-title">Record of taking Notes</h2>
-                <input type="text" id="user-in" placeholder="Username">
-                <input type="password" id="pass-in" placeholder="Password">
-                <button id="txt-btn-login" onclick="handleAuth('signin')" style="width:100%; padding:10px; background:var(--accent); color:white;">Sign In</button>
-                <p id="txt-goto-signup" onclick="toggleAuth('signup')" style="font-size:12px; cursor:pointer; margin-top:15px;">ยังไม่มีบัญชี? สมัครที่นี่</p>
-            </div>
-            <div id="signup-box" class="box" style="margin-top: 100px; display:none;">
-                <h2 id="txt-signup-title">สมัครสมาชิก</h2>
-                <input type="text" id="user-up" placeholder="Username">
-                <input type="password" id="pass-up" placeholder="Password">
-                <select id="country-up"></select>
-                <button id="txt-btn-signup" onclick="handleAuth('signup')" style="width:100%; padding:10px; background:var(--accent); color:white;">Sign Up</button>
-                <p id="txt-goto-login" onclick="toggleAuth('signin')" style="font-size:12px; cursor:pointer; margin-top:15px;">มีบัญชีแล้ว? เข้าสู่ระบบ</p>
-            </div>
-        </div>
-
-        <div id="game-section" style="display:none; width: 100%; flex-direction: column; align-items: center; height: 100%;">
-            <div id="stats-bar" style="margin-top: 15px; font-weight: bold; font-size: 18px;">
-                <span id="txt-stat-notes">Notes</span>: <span id="note-txt">0</span>
-            </div>
+        <div id="game-section" style="width: 100%; display: flex; flex-direction: column; align-items: center; height: 100%;">
+            <div id="stats-bar" style="margin-top: 15px; font-weight: bold; font-size: 18px; display:none;">
+                </div>
             
             <select id="note-sort" onchange="fetchNotes()" style="margin-top: 10px; width: 200px; padding: 5px;">
                 <option value="latest" id="txt-sort-latest">ล่าสุด</option>
@@ -97,21 +77,46 @@
     </div>
 
     <div id="side" class="sidebar">
-        <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 2px solid var(--accent); margin-bottom: 20px;">
-            <label style="cursor: pointer; font-weight: bold; display: flex; align-items: center;">
-                <input type="checkbox" id="show-lb" onchange="toggleLB()" style="transform: scale(1.5); margin-right: 15px;"> <span id="txt-side-showlb">แสดงอันดับ</span>
-            </label>
+        
+        <div id="sidebar-guest" style="display:none;">
+            <h2 id="txt-auth-title" style="text-align:center;">เข้าสู่ระบบ</h2>
+            <div id="login-box">
+                <input type="text" id="user-in" placeholder="Username">
+                <input type="password" id="pass-in" placeholder="Password">
+                <button id="txt-btn-login" onclick="handleAuth('signin')" style="width:100%; padding:10px; background:var(--accent); color:white;">Sign In</button>
+                <p id="txt-goto-signup" onclick="toggleAuth('signup')" style="font-size:12px; cursor:pointer; margin-top:15px; text-align:center;">ยังไม่มีบัญชี? สมัครที่นี่</p>
+            </div>
+            <div id="signup-box" style="display:none;">
+                <input type="text" id="user-up" placeholder="Username">
+                <input type="password" id="pass-up" placeholder="Password">
+                <select id="country-up"></select>
+                <button id="txt-btn-signup" onclick="handleAuth('signup')" style="width:100%; padding:10px; background:var(--accent); color:white;">Sign Up</button>
+                <p id="txt-goto-login" onclick="toggleAuth('signin')" style="font-size:12px; cursor:pointer; margin-top:15px; text-align:center;">มีบัญชีแล้ว? เข้าสู่ระบบ</p>
+            </div>
+            <div style="margin-top: 20px; text-align:center;">
+                <span id="txt-side-lang-guest">ภาษา</span>: 
+                <button onclick="setLang('th')">TH</button> | <button onclick="setLang('en')">EN</button>
+            </div>
         </div>
-        <div style="margin-bottom: 20px;">
-            <span id="txt-side-lang">ภาษา</span>: 
-            <button onclick="setLang('th')">TH</button> <button onclick="setLang('en')">EN</button>
+
+        <div id="sidebar-user" style="display:none;">
+            <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 2px solid var(--accent); margin-bottom: 20px;">
+                <label style="cursor: pointer; font-weight: bold; display: flex; align-items: center;">
+                    <input type="checkbox" id="show-lb" onchange="toggleLB()" style="transform: scale(1.5); margin-right: 15px;"> <span id="txt-side-showlb">แสดงสมาชิก</span>
+                </label>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <span id="txt-side-lang">ภาษา</span>: 
+                <button onclick="setLang('th')">TH</button> | <button onclick="setLang('en')">EN</button>
+            </div>
+            <h4 id="txt-side-edit">แก้ไขโปรไฟล์</h4>
+            <input type="text" id="edit-user">
+            <input type="password" id="edit-pass">
+            <select id="edit-country"></select>
+            <button id="txt-btn-save" onclick="updateProfile()" style="width:100%; padding:10px; background:var(--accent); color:white; margin-top:10px;">บันทึกการเปลี่ยนแปลง</button>
+            <button id="txt-btn-logout" onclick="logout()" style="background:var(--danger); width:100%; margin-top:10px; color:white; padding:10px;">ออกจากระบบ</button>
         </div>
-        <h4 id="txt-side-edit">แก้ไขโปรไฟล์</h4>
-        <input type="text" id="edit-user">
-        <input type="password" id="edit-pass">
-        <select id="edit-country"></select>
-        <button id="txt-btn-save" onclick="updateProfile()" style="width:100%; padding:10px; background:var(--accent); color:white; margin-top:10px;">บันทึกการเปลี่ยนแปลง</button>
-        <button id="txt-btn-logout" onclick="logout()" style="background:var(--danger); width:100%; margin-top:10px; color:white; padding:10px;">ออกจากระบบ</button>
+
     </div>
 
     <div id="note-modal" class="modal">
@@ -127,28 +132,33 @@
     </div>
 
     <script>
-        let userId = localStorage.getItem('userId'), currentTab = 'global', currentLang = 'th';
+        let userId = localStorage.getItem('userId');
+        let usernameCache = ""; // เก็บชื่อ User ไว้แสดง
+        let currentTab = 'global';
+        let currentLang = 'th';
         const countries = ["Thailand 🇹🇭", "USA 🇺🇸", "Japan 🇯🇵", "Korea 🇰🇷", "China 🇨🇳"];
 
         const i18n = {
             th: {
-                "txt-auth-title": "Record of taking Notes", "txt-btn-login": "เข้าสู่ระบบ", "txt-goto-signup": "ยังไม่มีบัญชี? สมัครที่นี่",
-                "txt-signup-title": "สมัครสมาชิก", "txt-btn-signup": "สมัครสมาชิก", "txt-goto-login": "มีบัญชีแล้ว? เข้าสู่ระบบ",
-                "txt-btn-write": "📝 เขียนโน๊ต", "txt-stat-notes": "จำนวนโน๊ต", "txt-sort-latest": "ล่าสุด", "txt-sort-oldest": "เก่าสุด",
-                "txt-sort-likes": "ไลค์เยอะสุด", "txt-sort-random": "สุ่ม", "txt-side-showlb": "แสดงอันดับ", "txt-side-lang": "ภาษา",
+                "txt-auth-title": "เข้าสู่ระบบ", "txt-btn-login": "เข้าสู่ระบบ", "txt-goto-signup": "ยังไม่มีบัญชี? สมัครที่นี่",
+                "txt-btn-signup": "สมัครสมาชิก", "txt-goto-login": "มีบัญชีแล้ว? เข้าสู่ระบบ",
+                "txt-btn-write": "📝 เขียนโน๊ต", "txt-sort-latest": "ล่าสุด", "txt-sort-oldest": "เก่าสุด",
+                "txt-sort-likes": "ไลค์เยอะสุด", "txt-sort-random": "สุ่ม", "txt-side-showlb": "แสดงสมาชิก", 
+                "txt-side-lang": "ภาษา", "txt-side-lang-guest": "ภาษา",
                 "txt-side-edit": "แก้ไขโปรไฟล์", "txt-btn-save": "บันทึกการเปลี่ยนแปลง", "txt-btn-logout": "ออกจากระบบ",
                 "txt-modal-title": "เขียนโน๊ตใหม่", "txt-btn-submit": "บันทึก", "txt-btn-close": "ปิด",
-                "txt-lb-title": "🏆 อันดับ", "txt-lb-overall": "อันดับโดยรวม", "txt-lb-notes": "เน้นจำนวน Note", "txt-lb-likes": "เน้นจำนวน Like",
+                "txt-lb-title": "🏆 สมาชิก", "txt-lb-overall": "สมาชิกโดยรวม", "txt-lb-notes": "เน้นจำนวน Note", "txt-lb-likes": "เน้นจำนวน Like",
                 "msg-del": "ลบโน๊ตนี้?", "msg-save": "อัปเดตเรียบร้อย!"
             },
             en: {
-                "txt-auth-title": "Record of taking Notes", "txt-btn-login": "Sign In", "txt-goto-signup": "No account? Sign up here",
-                "txt-signup-title": "Create Account", "txt-btn-signup": "Sign Up", "txt-goto-login": "Have account? Sign in",
-                "txt-btn-write": "📝 Write Note", "txt-stat-notes": "Notes", "txt-sort-latest": "Latest", "txt-sort-oldest": "Oldest",
-                "txt-sort-likes": "Most Liked", "txt-sort-random": "Random", "txt-side-showlb": "Show Leaderboard", "txt-side-lang": "Language",
+                "txt-auth-title": "Sign In", "txt-btn-login": "Sign In", "txt-goto-signup": "No account? Sign up here",
+                "txt-btn-signup": "Sign Up", "txt-goto-login": "Have account? Sign in",
+                "txt-btn-write": "📝 Write Note", "txt-sort-latest": "Latest", "txt-sort-oldest": "Oldest",
+                "txt-sort-likes": "Most Liked", "txt-sort-random": "Random", "txt-side-showlb": "Show Members", 
+                "txt-side-lang": "Language", "txt-side-lang-guest": "Language",
                 "txt-side-edit": "Edit Profile", "txt-btn-save": "Save Changes", "txt-btn-logout": "Log Out",
                 "txt-modal-title": "New Note", "txt-btn-submit": "Save", "txt-btn-close": "Close",
-                "txt-lb-title": "🏆 Leaderboard", "txt-lb-overall": "Overall Rank", "txt-lb-notes": "By Notes", "txt-lb-likes": "By Likes",
+                "txt-lb-title": "🏆 Members", "txt-lb-overall": "Overall Members", "txt-lb-notes": "By Notes", "txt-lb-likes": "By Likes",
                 "msg-del": "Delete this note?", "msg-save": "Updated!"
             }
         };
@@ -157,8 +167,23 @@
             const opt = countries.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('country-up').innerHTML = opt;
             document.getElementById('edit-country').innerHTML = opt;
+            
+            // เช็คว่า Login หรือยังเพื่อจัดหน้า Sidebar
+            if(userId) {
+                document.getElementById('sidebar-user').style.display = 'block';
+                document.getElementById('sidebar-guest').style.display = 'none';
+                document.getElementById('tab-user').style.display = 'inline-block';
+                document.getElementById('btn-write-nav').style.display = 'inline-block';
+                document.getElementById('stats-bar').style.display = 'block';
+                loadEditInfo(); // โหลดข้อมูล Profile + อัปเดตยอดโน๊ตที่มีชื่อผู้ใช้
+            } else {
+                document.getElementById('sidebar-user').style.display = 'none';
+                document.getElementById('sidebar-guest').style.display = 'block';
+            }
+
             setLang('th');
-            if(userId) loadGame();
+            fetchNotes();
+            fetchLB();
         };
 
         function setLang(lang) {
@@ -167,27 +192,37 @@
                 const el = document.getElementById(key);
                 if(el) el.innerText = i18n[lang][key];
             }
+            if(userId) updateStats(); // อัปเดตข้อความ "จำนวนโน๊ตของ..." ตามภาษา
             if(userId) fetchNotes(); 
         }
 
-        async function loadGame() {
-            document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('game-nav').style.display = 'flex';
-            document.getElementById('game-section').style.display = 'flex';
-            await updateStats();
-            fetchNotes();
-            fetchLB();
-        }
-
         async function updateStats() {
+            if(!userId || !usernameCache) return;
             const res = await fetch(`/api/load-stats/${userId}`);
             const data = await res.json();
-            document.getElementById('note-txt').innerText = data.total_notes;
+            
+            const statsBar = document.getElementById('stats-bar');
+            // เปลี่ยนข้อความเป็นแบบไดนามิกตามชื่อผู้ใช้
+            if(currentLang === 'th') {
+                statsBar.innerHTML = `จำนวนโน๊ตของ ${usernameCache} : <span style="color:var(--accent)">${data.total_notes}</span>`;
+            } else {
+                statsBar.innerHTML = `${usernameCache}'s Notes : <span style="color:var(--accent)">${data.total_notes}</span>`;
+            }
+        }
+
+        async function loadEditInfo() { 
+            const res = await fetch(`/api/user-info/${userId}`); 
+            const d = await res.json(); 
+            usernameCache = d.username; // เก็บชื่อไว้ใช้
+            document.getElementById('edit-user').value = d.username; 
+            document.getElementById('edit-pass').value = d.password; 
+            document.getElementById('edit-country').value = d.country; 
+            updateStats(); // โหลดชื่อเสร็จค่อยอัปเดตสถิติ
         }
 
         async function fetchNotes() {
             const sort = document.getElementById('note-sort').value;
-            const res = await fetch(`/api/notes?type=${currentTab}&userId=${userId}&sort=${sort}`);
+            const res = await fetch(`/api/notes?type=${currentTab}&userId=${userId || 0}&sort=${sort}`);
             const data = await res.json();
             document.getElementById('notes-container').innerHTML = data.map(n => `
                 <div class="note-card">
@@ -222,6 +257,7 @@
         }
 
         async function likeNote(id) {
+            if(!userId) return alert('กรุณาเข้าสู่ระบบก่อนกด Like');
             await fetch('/api/notes/like', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({noteId: id, userId}) });
             fetchNotes();
         }
@@ -237,19 +273,41 @@
                 </div>`).join('');
         }
 
-        // --- Other functions (Theme, Auth toggle, Sidebar, etc.) ---
+        // --- Auth & UI Functions ---
         function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-        function toggleAuth(p) { document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none'; document.getElementById('signup-box').style.display = p === 'signup' ? 'block' : 'none'; }
+        function toggleAuth(p) { 
+            document.getElementById('login-box').style.display = p === 'signin' ? 'block' : 'none'; 
+            document.getElementById('signup-box').style.display = p === 'signup' ? 'block' : 'none'; 
+            document.getElementById('txt-auth-title').innerText = p === 'signin' ? i18n[currentLang]["txt-btn-login"] : (currentLang === 'th' ? "สมัครสมาชิก" : "Sign Up");
+        }
+
         async function handleAuth(type) {
             const u = document.getElementById(type === 'signin' ? 'user-in' : 'user-up').value;
             const p = document.getElementById(type === 'signin' ? 'pass-in' : 'pass-up').value;
             const c = type === 'signup' ? document.getElementById('country-up').value : '';
+            if(!u || !p) return;
+
             const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, country:c}) });
-            if (res.ok) { if(type === 'signin') { userId = (await res.json()).userId; localStorage.setItem('userId', userId); loadGame(); } else toggleAuth('signin'); }
+            if (res.ok) { 
+                if(type === 'signin') { 
+                    userId = (await res.json()).userId; 
+                    localStorage.setItem('userId', userId); 
+                    location.reload(); // รีเฟรชหน้าเพื่อให้เข้าสู่โหมด User อย่างสมบูรณ์
+                } else { 
+                    toggleAuth('signin'); 
+                    alert(currentLang === 'th' ? 'สมัครสำเร็จ! กรุณาเข้าสู่ระบบ' : 'Success! Please Sign In.');
+                } 
+            } else {
+                alert('เกิดข้อผิดพลาด / Error');
+            }
         }
-        function toggleSide() { document.getElementById('side').classList.toggle('active'); if(document.getElementById('side').classList.contains('active')) loadEditInfo(); }
-        async function loadEditInfo() { const res = await fetch(`/api/user-info/${userId}`); const d = await res.json(); document.getElementById('edit-user').value = d.username; document.getElementById('edit-pass').value = d.password; document.getElementById('edit-country').value = d.country; }
-        async function updateProfile() { await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); alert(i18n[currentLang]["msg-save"]); }
+
+        function toggleSide() { document.getElementById('side').classList.toggle('active'); }
+        async function updateProfile() { 
+            await fetch('/api/update-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId, newUsername: document.getElementById('edit-user').value, newPassword: document.getElementById('edit-pass').value, newCountry: document.getElementById('edit-country').value}) }); 
+            alert(i18n[currentLang]["msg-save"]); 
+            loadEditInfo(); 
+        }
         function setTab(t) { currentTab = t; document.getElementById('tab-global').className = t === 'global' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-user').className = t === 'user' ? 'tab-btn active' : 'tab-btn'; fetchNotes(); }
         function logout() { localStorage.removeItem('userId'); location.reload(); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
